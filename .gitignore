@@ -1,0 +1,25 @@
+
+# Ignore Python byte-compiled files
+__pycache__/
+
+# Ignore environment-specific files
+venv/
+emily/
+haoli/
+mmenv/
+*.pyc
+.env
+error_logs/
+pretrain_IR/
+# ignore wandb
+wandb/
+__pycache__/
+error_logs/
+job_status.json
+
+fireo/
+
+.ipynb_checkpoints/
+
+
+sdvenv/

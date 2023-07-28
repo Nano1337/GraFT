@@ -1,0 +1,115 @@
+
+# General parameters
+use_optuna: True
+output_dir: '/data/datasets/research-datasets/output_dir'
+seed: 1234
+new_random: True
+phase: 'train'
+cfg_name: 'dino_middle_fusion_noconv_exp2_flex_size'
+
+# Dataset parameters
+dataroot: '/data/datasets/research-datasets'
+dataset: 'reid_mm/RGBNT100'
+dataset_name: 'RGBNT100'
+workers: 128
+input_size: 256 # 224 normally, 518 for dinov2
+hflip: 0.5 # threshold for random horizontal flip
+resize_min: 0.5
+resize_max: 1.0
+data_augmentation: False
+augment_type: ""
+train_ratio: 0.8 # use 80% of the data for training and 20% for validation
+one_hot: True
+image_num_for_reid_train: 1 # Default 1 -- DO NOT CHANGE THIS ONE AND num_triplet_samples AT SAME TIME THEY DO SAME THING
+image_num_for_reid_validate: 25 # Default 25
+num_triplet_samples: 8 # Default 1
+
+# Model parameters 
+model_modalities: ['R', 'N', 'T']
+non_generalizable_inputs: False
+
+model_downsampling_encoders: False
+model_mask_modality: False
+# #  RGB Encoder
+# model_rgb_encoder_image_shape: [3, 192, 192]
+# # model_rgb_encoder_latent_size: 256 # size of the joint latent space vars after projection
+# #  IR
+# model_ir_encoder_image_shape: [1, 192, 192]
+# model_ir_encoder_latent_size: 256 # size of the joint latent space vars after projection
+
+model_anchor_only_reid: False # false by default
+model_concat_along_seq_len: True
+model_num_verb_blocks: 1
+model_num_cls_tokens: 2
+model_num_fusion_tokens: 2
+model_num_heads: 8
+
+model_variational: False
+model_verb_module_latent_size: 512 # size of the joint latent space vars
+vit_embed_dim: 384 # 384 for dino, 768 normally 
+model_verb_transformer_encoder_layers: 1
+model_patch_size: 48 # crucial for this
+model_verb_module_nhead: 8
+
+model_decoder_output_class_num: 50 
+model_fusion_combos: 'ffd'
+data_token_step: 0
+interpolate_pos_encoding: True # False = no flexible input size
+
+# Loss parameters
+# Options (add + for multiple losses): 
+# Triplet_euclidean or triplet_cosine with soft_margin (optional)
+# center
+# ce
+# context
+loss_fn: "center+ce+triplet_euclidean_soft_margin" 
+loss_weighting: 0.5
+center_weighting: 0.0005
+learnable_loss_weighting: False
+label_smoothing: 0.0
+alpha: 1
+
+# Optimizer & LR_scheduler parameters
+# optimizer: 'adamw'
+# lr: 0.000275
+# weight_decay: 0.0055
+# beta1: 0.775
+# beta2: 0.9825
+# lr_scheduler_name: 'warmup_cosine_lr'
+# max_lr: 1e-4
+optimizer: 'adamw'
+lr: 3e-4
+weight_decay: 1e-3
+beta1: 0.9
+beta2: 0.999
+rho: 0.03
+lr_scheduler_name: 'warmup_cosine_lr'
+warmup_steps: 50
+max_lr: 0.01
+ 
+# Training parameters
+gpus: [0, 1, 2, 3]
+# gpus: [4, 5, 6, 7]
+ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
+ckpt_full_path: null
+batch_size: 20
+num_epochs: 75
+print_freq: 50
+model_name: "dino_reid_fusion_rnt_exp2_noconv"
+trainer_name: "trainer_rgbn_triplet"
+verbose: True
+gradient_accumulation_steps: 8
+max_rank: 50
+
+# Weights and Biases Logging
+use_wandb: True
+wandb_project: "mm-mafia-reid-baseline"
+study_name: "dino_middle_fusion_noconv_exp2_flex_size"
+wandb_run_name: "dino_middle_fusion_noconv_exp2_flex_size"
+
+
+wandb_trial_name: "ffd_three-loss-euclidean_size=256"
+
+# ablations: 
+# context + more losses
+# fff vs ffd
