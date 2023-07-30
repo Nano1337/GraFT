@@ -45,7 +45,7 @@ def parse_string_list(string_list: List[str]) -> Tuple[List[int], List[int]]:
     return ids, camera_ids
 
 
-class TrainerRGBNTripletVerb(Base_Trainer):
+class Trainer_RGBN_Triplet(Base_Trainer):
     """Trainer class for RGBN Triplet Verb model.
 
     This class inherits from the BaseTrainer class and provides functionalities
@@ -267,6 +267,9 @@ class TrainerRGBNTripletVerb(Base_Trainer):
 
         Returns:
             Mean Average Precision (mAP) for this validation round.
+
+        Raises:
+            optuna.exceptions.TrialPruned: If the trial is pruned.
         """
 
         start_time = time.time()  # start the timer
