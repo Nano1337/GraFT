@@ -56,7 +56,7 @@ class DataAugmentation_RGBNT(object):
 
     def process_modality(self, input_sample: List[Any], phase: str) -> List[Any]:
         """Performs data augmentation on a single data sample.
-        
+
         Args:
             input_sample: List of images of different modalities.
             phase: Phase of the data processing (train or validate).

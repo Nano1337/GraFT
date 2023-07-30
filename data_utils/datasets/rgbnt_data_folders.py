@@ -119,7 +119,7 @@ class RGBNT_MultimodalDatasetFolder(VisionDataset):
         modality_list: List of modalities as strings.
         loader: A function to load a sample given its path.
         extensions: A list of allowed extensions. Either extensions or is_valid_file should be passed.
-        transform: A function/transform that takes in a sample and returns a transformed version. 
+        transform: A function/transform that takes in a sample and returns a transformed version.
         target_transform: A function/transform that takes in the target and transforms it.
         is_valid_file: A function that takes path of a file and check if the file is a valid file.
         prefixes: Dictionary of modality prefixes.

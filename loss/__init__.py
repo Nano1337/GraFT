@@ -1,7 +1,8 @@
 import torch.nn as nn
 from loss.reid_loss import Triplet_CE_Loss, Circle_Loss, Combined_Loss, ContextualSimilarityLoss
 
-def get_loss(cfgs: dict, fabric): 
+
+def get_loss(cfgs: dict, fabric):
     """
     Function to get the specified loss function according to the configuration.
 
@@ -15,11 +16,11 @@ def get_loss(cfgs: dict, fabric):
     Raises:
         NotImplementedError: If the specified loss function in the config is not supported.
     """
-    if cfgs.loss_fn == "CrossEntropy": 
+    if cfgs.loss_fn == "CrossEntropy":
         criterion = nn.CrossEntropyLoss(label_smoothing=cfgs.smoothing)
-    elif cfgs.loss_fn == "MSE": 
+    elif cfgs.loss_fn == "MSE":
         criterion = nn.MSELoss()
-    elif "triplet" in cfgs.loss_fn and "+" not in cfgs.loss_fn: 
+    elif "triplet" in cfgs.loss_fn and "+" not in cfgs.loss_fn:
         print("Using triplet_CE loss function.")
         criterion = Triplet_CE_Loss(cfgs=cfgs, fabric=fabric)
     elif "circle" in cfgs.loss_fn and "+" not in cfgs.loss_fn:
@@ -30,5 +31,6 @@ def get_loss(cfgs: dict, fabric):
         print("Using combined loss function.")
         criterion = Combined_Loss(cfgs=cfgs, fabric=fabric)
     else:
-        raise NotImplementedError("The specified loss function is not supported.")
-    return criterion 
+        raise NotImplementedError(
+            "The specified loss function is not supported.")
+    return criterion
