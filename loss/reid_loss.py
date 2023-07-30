@@ -135,11 +135,7 @@ class Triplet_CE_Loss(nn.Module):
         Returns:
             loss (torch.Tensor): The computed ReIDLoss.
         """
-
-        if self.cfgs.learnable_loss_weighting:
-            clamped_weight = self.fabric.to_device(torch.sigmoid(self.weight))
-        else:
-            clamped_weight = self.weight
+        clamped_weight = self.weight
 
         classification_loss = self.ce_loss(output, target)
 

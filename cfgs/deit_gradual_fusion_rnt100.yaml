@@ -15,10 +15,10 @@ dataset_name: 'RGBNT100'
 workers: 128
 input_size: [384, 384] # 224 normally, 384 for larger deit
 hflip: 0.5 # threshold for random horizontal flip
-resize_min: 0.5
-resize_max: 1.0
+resize_min: 0.5 # only if data_augmentation is True
+resize_max: 1.0 # only if data_augmentation is True
 data_augmentation: False
-augment_type: "" # "random_erasure"
+augment_type: "" # Optional: "random_erasure"
 train_ratio: 0.8 # use 80% of the data for training and 20% for validation
 one_hot: True
 image_num_for_reid_train: 1 # Default 1 -- DO NOT CHANGE THIS ONE AND num_triplet_samples AT SAME TIME THEY DO SAME THING
@@ -28,53 +28,28 @@ num_triplet_samples: 8 # Default 1
 # Model parameters 
 model_modalities: ['R', 'N', 'T']
 non_generalizable_inputs: False
-model_downsampling_encoders: False
-model_mask_modality: False
-#  RGB Encoder
-model_rgb_encoder_image_shape: [3, 192, 192]
-# model_rgb_encoder_latent_size: 256 # size of the joint latent space vars after projection
-#  IR
-model_ir_encoder_image_shape: [1, 192, 192]
-# model_ir_encoder_latent_size: 256 # size of the joint latent space vars after projection
-
 model_anchor_only_reid: False # false by default
-model_concat_along_seq_len: True
-model_num_verb_blocks: 1
 model_num_cls_tokens: 2
 model_num_fusion_tokens: 2
 model_num_heads: 8
-
-model_variational: False
-model_verb_module_latent_size: 512 # size of the joint latent space vars
-vit_embed_dim: 768 # 384 for dino, 768 normally 
-model_verb_transformer_encoder_layers: 1
-model_patch_size: 48 # crucial for this
-model_verb_module_nhead: 8
-
-model_decoder_output_class_num: 50 
+vit_embed_dim: 768 # 384 for dino, 768 normally
+model_decoder_output_class_num: 50 # change this when changing datasets
 model_fusion_combos: 'ffd'
 data_token_step: 0
-interpolate_pos_encoding: False
 
 # Loss parameters
-# Options (add + for multiple losses): 
-# Triplet_euclidean or triplet_cosine with soft_margin (optional)
-# center
-# ce
-# context
 loss_fn: "center+ce+triplet_euclidean_soft_margin" 
 loss_weighting: 0.5
 center_weighting: 0.0005
-learnable_loss_weighting: False
 label_smoothing: 0.0
 alpha: 1
 
+# Optimizer parameters
 optimizer: 'adamw'
 lr: 3e-4
 weight_decay: 1e-3
 beta1: 0.9
 beta2: 0.999
-rho: 0.03
 lr_scheduler_name: 'warmup_cosine_lr'
 warmup_steps: 50
 max_lr: 0.01
@@ -89,9 +64,8 @@ num_epochs: 150
 print_freq: 50
 model_name: "deit_gradual_fusion"
 trainer_name: "trainer_rgbn_triplet"
-verbose: True
-gradient_accumulation_steps: 8
-max_rank: 50
+verbose: True # print more information
+max_rank: 50 # max number of ranks to calculate cmc and mAP
 
 # Weights and Biases Logging
 use_wandb: True

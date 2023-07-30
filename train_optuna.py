@@ -124,10 +124,7 @@ if __name__ == "__main__":
     cfgs.seed = rand_seed
     seed_everything(cfgs.seed) 
 
-    if cfgs.use_mixed_precision: 
-        fabric = Fabric(accelerator="auto", devices = cfgs.gpus, precision="bf16-mixed")
-    else: 
-        fabric = Fabric(accelerator="auto", devices = cfgs.gpus)
+    fabric = Fabric(accelerator="auto", devices = cfgs.gpus)
     fabric.launch()
     
     # set up optuna study
