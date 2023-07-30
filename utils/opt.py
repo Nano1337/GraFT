@@ -198,6 +198,11 @@ def get_cfgs():
                         type=int,
                         default=50,
                         help='Max rank for validation metrics')
+    parser.add_argument('--pretrained_model',
+                        type=str,
+                        default='distilled-224',
+                        choices=['distilled-224', 'distilled-384'],
+                        help='Pretrained model to use')
 
     # Wandb parameters
     parser.add_argument('--use_wandb',
