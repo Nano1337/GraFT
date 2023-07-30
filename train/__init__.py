@@ -19,9 +19,7 @@ def get_trainer(cfgs: dict, fabric, model: nn.Module, train_loader, val_loader, 
     
     """
 
-    if cfgs.trainer_name == "default": # up to date
-        trainer = Trainer_1(cfgs, fabric, model, train_loader, val_loader, optimizer, criterion, unique_dir_name, trial)
-    elif cfgs.trainer_name == "trainer_rgbn_triplet": # up to date
+    if cfgs.trainer_name == "trainer_rgbn_triplet": # up to date
         trainer = Trainer_RGBN_Triplet_Verb(cfgs, fabric, model, train_loader, val_loader, optimizer, criterion, unique_dir_name, trial)
     elif cfgs.trainer_name == "visualize_embedding_rnt":
         trainer = Trainer_Visualize_Embedding_RNT(cfgs, fabric, model, train_loader, val_loader, optimizer, criterion, unique_dir_name, trial)

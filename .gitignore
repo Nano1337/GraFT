@@ -11,6 +11,7 @@ mmenv/
 .env
 error_logs/
 pretrain_IR/
+
 # ignore wandb
 wandb/
 __pycache__/
