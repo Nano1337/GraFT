@@ -262,7 +262,7 @@ class Center_Loss(nn.Module):
         distmat = self.fabric.to_device(torch.pow(x, 2).sum(dim=1, keepdim=True).expand(batch_size, self.num_classes)) + \
                   self.fabric.to_device(torch.pow(self.centers, 2).sum(dim=1, keepdim=True).expand(self.num_classes, batch_size)).t()
         self.fabric.to_device(distmat)
-        distmat.addmm_(1, -2, x, self.fabric.to_device(self.centers.t()))
+        distmat.addmm_(x, self.fabric.to_device(self.centers.t()), beta=1, alpha=-2)
 
         classes = torch.arange(self.num_classes).long()
         self.fabric.to_device(classes)

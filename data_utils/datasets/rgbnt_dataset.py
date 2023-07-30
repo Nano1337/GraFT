@@ -2,6 +2,7 @@ import os
 import random
 
 import numpy as np
+import torch
 import torchvision.transforms.functional as TF
 import torch.multiprocessing as mp
 
@@ -91,7 +92,7 @@ class DataAugmentation_RGBNT(object):
                                 input_sample[modality_i][triplet] = TF.hflip(input_sample[modality_i][triplet])
                         
                     # resize cropped region
-                    input_sample[modality_i][triplet] = input_sample[modality_i][triplet].resize((self.input_size, self.input_size))
+                    input_sample[modality_i][triplet] = input_sample[modality_i][triplet].resize((self.input_size[0], self.input_size[1]))
                     # Convert to Tensor
                     img = input_sample[modality_i][triplet]
                     img = TF.to_tensor(input_sample[modality_i][triplet]) 
@@ -115,7 +116,7 @@ class DataAugmentation_RGBNT(object):
                     continue
 
                 # resize cropped region
-                input_sample[modality_i] = input_sample[modality_i].resize((self.input_size, self.input_size))
+                input_sample[modality_i] = input_sample[modality_i].resize((self.input_size[0], self.input_size[1]))
                 # Convert to Tensor
                 img = input_sample[modality_i]
                 img = TF.to_tensor(input_sample[modality_i])
