@@ -3,6 +3,7 @@ import torch.nn as nn
 from transformers import DeiTModel
 import torch.distributed as dist
 
+
 def weights_init_kaiming(m):
     classname = m.__class__.__name__
     if classname.find('Linear') != -1:
@@ -17,12 +18,14 @@ def weights_init_kaiming(m):
             nn.init.constant_(m.weight, 1.0)
             nn.init.constant_(m.bias, 0.0)
 
+
 def weights_init_classifier(m):
     classname = m.__class__.__name__
     if classname.find('Linear') != -1:
         nn.init.normal_(m.weight, std=0.001)
         if m.bias is not None:
             nn.init.constant_(m.bias, 0.0)
+
 
 class DEIT_Gradual_Fusion(nn.Module):
     '''
@@ -61,8 +64,8 @@ class DEIT_Gradual_Fusion(nn.Module):
         print("Transformer loaded")
         
         # BNN after flattening
-        self.bottleneck = nn.BatchNorm1d(self.feat_dim) # norm along batch dim
-        self.bottleneck.bias.requires_grad = False # no shift, center around origin for hypersphere
+        self.bottleneck = nn.BatchNorm1d(self.feat_dim)  # norm along batch dim
+        self.bottleneck.bias.requires_grad = False  # no shift, center around origin for hypersphere
         self.bottleneck.apply(weights_init_kaiming)
         process_group = dist.new_group(ranks=list(range(self.fabric.world_size)))
         self.bottleneck = nn.SyncBatchNorm.convert_sync_batchnorm(self.bottleneck, process_group=process_group)
