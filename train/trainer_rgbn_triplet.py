@@ -89,9 +89,8 @@ class Trainer_RGBN_Triplet(Base_Trainer):
             self.lr_scheduler = lr_schedulers.get_lr_scheduler(
                 cfgs, self.optimizer, self.train_loader)
 
-        self.model, self.optimizer = self.fabric.setup(
-            self.model, self.optimizer
-            )
+        self.model, self.optimizer = self.fabric.setup(self.model,
+                                                       self.optimizer)
         self.unique_dir_name = unique_dir_name
         self.accumulated_loss = []
 
@@ -238,7 +237,7 @@ class Trainer_RGBN_Triplet(Base_Trainer):
             iter_data_time = time.time()  # start timer for data loading/iter
             epoch_iter = 0  # start epoch iteration counter
 
-            self.train_epoch(epoch, end_epoch, total_iters, epoch_iter, 
+            self.train_epoch(epoch, end_epoch, total_iters, epoch_iter,
                              iter_data_time, optimize_time)
 
             if self.fabric.is_global_zero:
@@ -250,12 +249,14 @@ class Trainer_RGBN_Triplet(Base_Trainer):
             # save checkpoint only if global mAP is higher than previous best
             if self.fabric.is_global_zero and epoch_valid_acc > self.highest_val_acc:
                 print("Saving checkpoint at epoch {}".format(epoch))
-                self.save_networks(os.path.join(self.cfgs.ckpt_dir, self.unique_dir_name),
-                                   'best.pth', epoch)
+                self.save_networks(
+                    os.path.join(self.cfgs.ckpt_dir, self.unique_dir_name),
+                    'best.pth', epoch)
                 self.highest_val_acc = epoch_valid_acc
 
         if self.fabric.is_global_zero:
-            print("Training completed. Highest validation acc: {}".format(self.highest_val_acc))
+            print("Training completed. Highest validation acc: {}".format(
+                self.highest_val_acc))
             wandb.run.summary["highest_val_acc"] = self.highest_val_acc
             wandb.run.summary["state"] = "completed"
             wandb.finish(quiet=True)
@@ -286,9 +287,13 @@ class Trainer_RGBN_Triplet(Base_Trainer):
                         batched_rgb.append(batch_input[b][0])
                         batched_ir.append(batch_input[b][1])
 
-                    batched_rgb = self.fabric.to_device(torch.stack(batched_rgb, dim=0))
-                    batched_ir = self.fabric.to_device(torch.stack(batched_ir, dim=0))
-                    embeddings = self.model(batched_rgb, batched_ir, train_mode=False)
+                    batched_rgb = self.fabric.to_device(
+                        torch.stack(batched_rgb, dim=0))
+                    batched_ir = self.fabric.to_device(
+                        torch.stack(batched_ir, dim=0))
+                    embeddings = self.model(batched_rgb,
+                                            batched_ir,
+                                            train_mode=False)
 
                 else:
                     # NEW VERSION
@@ -297,10 +302,12 @@ class Trainer_RGBN_Triplet(Base_Trainer):
                         inputs[modality] = []
                         for b in range(len(batch_input)):
                             inputs[modality].append(batch_input[b][m])
-                        inputs[modality] = self.fabric.to_device(torch.stack(inputs[modality], dim=0))
+                        inputs[modality] = self.fabric.to_device(
+                            torch.stack(inputs[modality], dim=0))
                     embeddings = self.model(inputs, train_mode=False)
 
-                self.metric.update(embeddings["z_reparamed_anchor"], pid, camid)
+                self.metric.update(embeddings["z_reparamed_anchor"], pid,
+                                   camid)
 
             # after all batches are processed, get final results
             cmc, mAP = self.metric.compute()
@@ -320,13 +327,15 @@ class Trainer_RGBN_Triplet(Base_Trainer):
                 print("CMC curve")
                 for r in [1, 5, 10]:
                     print("Rank-{:<3}: {:.4%}".format(r, cmc[r - 1]))
-                print('Validation Time: ', round(time.time() - start_time, 2), 'sec')
+                print('Validation Time: ', round(time.time() - start_time, 2),
+                      'sec')
 
                 # log to optuna
                 if self.cfgs.use_optuna:
                     self.trial.report(mAP, self.epoch)
                     if self.trial.should_prune():
-                        print("Trial was pruned at epoch {}".format(self.epoch))
+                        print("Trial was pruned at epoch {}".format(
+                            self.epoch))
                         wandb.run.summary["state"] = "pruned"
                         wandb.finish(quiet=True)
                         raise optuna.exceptions.TrialPruned()
@@ -343,12 +352,16 @@ class Trainer_RGBN_Triplet(Base_Trainer):
         """
 
         state = {
-            "epoch": epoch,
-            "mm_model": self.model,
-            "optimizer": self.optimizer,
-            "loss": self.accumulated_loss,
+            "epoch":
+            epoch,
+            "mm_model":
+            self.model,
+            "optimizer":
+            self.optimizer,
+            "loss":
+            self.accumulated_loss,
             "lr_scheduler":
-                self.lr_scheduler.state_dict() if self.lr_scheduler else None,
+            self.lr_scheduler.state_dict() if self.lr_scheduler else None,
         }
         self.fabric.save(os.path.join(save_dir, save_name), state)
 
