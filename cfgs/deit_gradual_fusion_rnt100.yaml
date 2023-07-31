@@ -56,8 +56,8 @@ warmup_steps: 50
 max_lr: 0.01
  
 # Training parameters
-# gpus: [0, 1, 2, 3]
-gpus: [4, 5, 6, 3]
+gpus: [0, 1, 2, 3]
+# gpus: [4, 5, 6, 3]
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
 ckpt_full_path: null
 batch_size: 20
@@ -73,7 +73,7 @@ use_wandb: True
 wandb_project: "mm-mafia-reid-hpo"
 study_name: "deit-hpo-init"
 wandb_run_name: "deit-hpo-init"
-wandb_trial_name: "ffd_three-loss-euclidean_DEiT-B-224-distilled"
+wandb_trial_name: "ffd_three-loss-euclidean_DEiT-B-224-distilled-inference"
 
 hyperparameters:
   lr:

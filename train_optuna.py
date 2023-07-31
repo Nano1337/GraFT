@@ -86,8 +86,8 @@ def main(cfgs: dict, fabric, trial: Trial = None):
         print("Validation set size:", len(val_dataset))
 
     # create output directory
-    config_name = os.path.splitext(os.path.basename(cfgs.cfg_name))[0]
-    unique_dir_name = time.strftime("%Y%m%d-%H%M%S-") + config_name
+    wandb_trial_name = os.path.splitext(os.path.basename(cfgs.wandb_trial_name))[0]
+    unique_dir_name = time.strftime("%Y%m%d-%H%M%S-") + wandb_trial_name
 
     output_dir = Path(cfgs.output_dir, unique_dir_name)
     output_dir.mkdir(parents=True, exist_ok=True)
