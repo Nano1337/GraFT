@@ -3,15 +3,13 @@
 # General parameters
 use_optuna: True
 output_dir: '/data/datasets/research-datasets/output_dir'
-seed: 1234
-new_random: True
 phase: 'train'
-cfg_name: 'deit-hpo-try1'
+cfg_name: 'deit-hpo-RN300'
 
 # Dataset parameters
 dataroot: '/data/datasets/research-datasets'
-dataset: 'reid_mm/RGBNT100'
-dataset_name: 'RGBNT100'
+dataset: 'reid_mm/RGBN300'
+dataset_name: 'RGBN300'
 workers: 128
 input_size: [224, 224] # 224 normally, 384 for larger deit
 hflip: 0.5 # threshold for random horizontal flip
@@ -26,14 +24,14 @@ image_num_for_reid_validate: 25 # Default 25
 num_triplet_samples: 8 # Default 1
 
 # Model parameters 
-model_modalities: ['R', 'N', 'T']
+model_modalities: ['R', 'N']
 non_generalizable_inputs: False
 model_anchor_only_reid: False # false by default
 model_num_cls_tokens: 2
 model_num_fusion_tokens: 2
 model_num_heads: 8
 vit_embed_dim: 768 # 384 for dino, 768 normally
-model_decoder_output_class_num: 50 # change this when changing datasets
+model_decoder_output_class_num: 150 # change this when changing datasets
 model_fusion_combos: 'ffd'
 data_token_step: 0
 pretrained_model: "distilled-224"
@@ -72,20 +70,35 @@ n_trials: 100 # number of trials for optuna
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: "mm-mafia-reid-hpo"
-study_name: "deit-hpo-try1"
-wandb_run_name: "deit-hpo-try1"
-wandb_trial_name: "ffd_three-loss-euclidean_DEiT-B-224-distilled-inference"
+study_name: "deit-hpo-RN300"
+wandb_run_name: "deit-hpo-RN300"
+wandb_trial_name: "ffd_three-loss-euclidean_DEiT-B-224-distilled-RN300"
 
 hyperparams:
   lr:
     min: 0.000001
     max: 0.00001
+    type: loguniform
   weight_decay:
     min: 0.0001
     max: 0.001
+    type: loguniform
   beta1:
     min: 0.80
-    max: 0.90
+    max: 0.95
+    type: float
   beta2:
     min: 0.97
     max: 0.98
+    type: float
+  model_num_cls_tokens: 
+    min: 2
+    max: 5
+    type: int
+  model_num_fusion_tokens: 
+    min: 2
+    max: 10
+    type: int
+  model_num_heads: 
+    opt: [1, 2, 4, 8, 16]
+    type: categorical
