@@ -74,3 +74,17 @@ wandb_project: "mm-mafia-reid-hpo"
 study_name: "deit-hpo-init"
 wandb_run_name: "deit-hpo-init"
 wandb_trial_name: "ffd_three-loss-euclidean_DEiT-B-224-distilled"
+
+hyperparameters:
+  lr:
+    min: 0.00001
+    max: 0.00001
+  weight_decay:
+    min: 0.001
+    max: 0.001
+  beta1:
+    min: 0.80
+    max: 0.85
+  beta2:
+    min: 0.97
+    max: 0.98
