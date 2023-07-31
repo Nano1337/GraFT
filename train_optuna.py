@@ -1,6 +1,5 @@
 import os
 import time
-import random
 from pathlib import Path
 
 import wandb
