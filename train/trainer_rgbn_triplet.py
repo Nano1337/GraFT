@@ -363,7 +363,10 @@ class Trainer_RGBN_Triplet(Base_Trainer):
             "lr_scheduler":
             self.lr_scheduler.state_dict() if self.lr_scheduler else None,
         }
-        self.fabric.save(os.path.join(save_dir, save_name), state)
+        save_path = os.path.join(save_dir, save_name)
+        wandb.log({"train/save_path": save_path})
+        print("Saving ckpt at path: ", save_path)
+        self.fabric.save(save_path, state)
 
     def load_networks(self, load_path: str) -> None:
         """Loads the model state from a checkpoint file.

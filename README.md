@@ -39,7 +39,7 @@ wandb_run_name: "transformer_baseline_v2_rn100_param=5m_no_downsampling_patch=24
 wandb_trial_name: "elarger patch size=64, lower seq_len=4, e-5-6lr, transformer_encoder=3" # trial_name under study
 ```
 
-- If using optuna for hyperameter search:
+- If using optuna for hyperparameter search:
     - use_optuna, if True then make sure to use train_optuna.py
         - check the lr and weight decay range specified at the beginning of train_optuna.py
 - Activate virtual environment
