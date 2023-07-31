@@ -1,6 +1,7 @@
 import torch.optim.lr_scheduler as lr_scheduler
 from lr_schedulers.warmup_cosine_schedule import WarmupCosineSchedule
 
+
 def get_lr_scheduler(cfgs: dict, optimizer, train_loader):
     """
     Function to get the learning rate scheduler as specified by the configuration.
@@ -15,10 +16,16 @@ def get_lr_scheduler(cfgs: dict, optimizer, train_loader):
         lrs (torch.optim.lr_scheduler._LRScheduler): The specified learning rate scheduler.
 
     """
-    if cfgs.lr_scheduler_name == "one_cycle_lr": 
-        lrs = lr_scheduler.OneCycleLR(optimizer, max_lr=cfgs.max_lr, epochs=cfgs.num_epochs, steps_per_epoch=len(train_loader)) 
+    if cfgs.lr_scheduler_name == "one_cycle_lr":
+        lrs = lr_scheduler.OneCycleLR(optimizer,
+                                      max_lr=cfgs.max_lr,
+                                      epochs=cfgs.num_epochs,
+                                      steps_per_epoch=len(train_loader))
     elif cfgs.lr_scheduler_name == "warmup_cosine_lr":
-        lrs = WarmupCosineSchedule(optimizer, warmup_steps=cfgs.warmup_steps, total_steps=(cfgs.num_epochs*len(train_loader)), cycles=cfgs.cycles)
+        lrs = WarmupCosineSchedule(optimizer,
+                                   warmup_steps=cfgs.warmup_steps,
+                                   total_steps=(cfgs.num_epochs * len(train_loader)),
+                                   cycles=cfgs.cycles)
     else:
         lrs = None
 

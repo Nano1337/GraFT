@@ -12,7 +12,6 @@ from metrics.R1_mAP import R1_mAP
 
 # FIXME: this code doesn't work and may be outdated. Check with trainer_rgbn_triplet_verb
 
-
 def parse_string_list(string_list):
     """
     Parses a list of string identifiers to extract person IDs and camera IDs.
