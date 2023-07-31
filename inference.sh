@@ -1,0 +1,1 @@
+python inference.py -c cfgs/visualize_embeddings.yaml

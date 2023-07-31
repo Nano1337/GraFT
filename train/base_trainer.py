@@ -23,10 +23,10 @@ class Base_Trainer(Module, ABC):
                  cfgs: Dict,
                  fabric: Any,
                  model: Type[Module],
-                 train_loader: Type[DataLoader],
-                 val_loader: Type[DataLoader],
-                 optimizer: Type[optim.Optimizer],
-                 criterion: Type[Module]):
+                 train_loader: Type[DataLoader] = None,
+                 val_loader: Type[DataLoader] = None,
+                 optimizer: Type[optim.Optimizer] = None,
+                 criterion: Type[Module] = None):
         super().__init__()
         self.cfgs = cfgs
         self.fabric = fabric

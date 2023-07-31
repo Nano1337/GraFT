@@ -1,0 +1,51 @@
+# Dataset parameters
+dataroot: '/data/datasets/research-datasets'
+dataset: 'reid_mm/RGBNT100'
+dataset_name: 'RGBNT100'
+workers: 128
+input_size: [224, 224]
+hflip: 0.5 # threshold for random horizontal flip
+resize_min: 0.5
+resize_max: 1.0
+data_augmentation: False
+train_ratio: 0.8 # use 80% of the data for training and 20% for validation
+one_hot: True
+image_num_for_reid_train: 1 # Default 1 -- DO NOT CHANGE THIS ONE AND num_triplet_samples AT SAME TIME THEY DO SAME THING
+image_num_for_reid_validate: 25 # Default 25
+num_triplet_samples: 8 # Default 1
+
+
+# Model parameters 
+model_modalities: ['R', 'N', 'T']
+model_anchor_only_reid: False #by default
+model_num_verb_blocks: 1
+model_num_cls_tokens: 2
+model_num_fusion_tokens: 2
+model_num_heads: 8
+vit_embed_dim: 768
+model_decoder_output_class_num: 50 
+model_fusion_combos: 'ffd'
+data_token_step: 0
+interpolate_pos_encoding: True
+ 
+
+# Training parameters
+gpus: [0, 1, 2, 3]
+ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
+ckpt_full_path: '/data/datasets/research-datasets/ckpt_dir/20230730-125148-deit_exp_middle_fusion/best.pth' #'/data/datasets/research-datasets/ckpt_dir/20230727-112754-dino_middle_fusion_noconv_exp2_flex_size/best.pth'
+batch_size: 20
+num_epochs: 250
+print_freq: 50
+model_name: "deit_gradual_fusion" # "conv_baseline_reid" 
+trainer_name: "validation_only"
+verbose: True
+gradient_accumulation_steps: 8
+max_rank: 50
+
+
+# Visualization configs
+visualize_embeddings: True
+vis_save_path: "./visualizations/"
+vis_dim: 2
+vis_reduction_method: 'tsne'
+

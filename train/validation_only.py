@@ -38,7 +38,7 @@ def parse_string_list(string_list):
     
     return ids, camera_ids
 
-class Trainer_Visualize_Embedding_RNT(Base_Trainer): 
+class Trainer_Validation_Only(Base_Trainer): 
     """
     Trainer class for RGBN Triplet Verb model. This class inherits from the Base_Trainer class and
     provides functionalities for training and validating the RGBN Triplet Verb model.
@@ -46,7 +46,7 @@ class Trainer_Visualize_Embedding_RNT(Base_Trainer):
     The trainer includes methods for training a single epoch, running validation, saving and loading models.
     """
 
-    def __init__(self, cfgs, fabric, model, train_loader, val_loader, optimizer, criterion, unique_dir_name, trial=None):
+    def __init__(self, cfgs, fabric, model, val_loader):
         """
         Initializes the trainer with provided configurations, model, data loaders, optimizer, and loss function.
 
@@ -61,13 +61,9 @@ class Trainer_Visualize_Embedding_RNT(Base_Trainer):
         :param trial: Optuna trial object for hyperparameter tuning. Default is None.
         """
         
-        super().__init__(cfgs, fabric, model, train_loader, val_loader, optimizer, criterion)
-        if cfgs.lr_scheduler_name: # Note: must add lr_scheduler to optimizer before wrapping with Fabric
-            self.lr_scheduler = lr_schedulers.get_lr_scheduler(cfgs, self.optimizer, self.train_loader)
-        self.model, self.optimizer = self.fabric.setup(self.model, self.optimizer)
+        super().__init__(cfgs = cfgs, fabric = fabric, model = model, val_loader = val_loader)
+        self.model = self.fabric.setup(self.model)
     
-        self.accumulated_loss = []
-
         # load checkpoint if exists
         if not os.path.isdir(cfgs.ckpt_dir): 
             raise ValueError("Checkpoint directory does not exist")
@@ -80,30 +76,6 @@ class Trainer_Visualize_Embedding_RNT(Base_Trainer):
         query_path = os.path.join(str(cfgs.dataroot), str(cfgs.dataset)) + "/rgbir/query"
         self.num_queries = len(os.listdir(query_path))
         self.metric = R1_mAP(self.fabric, self.num_queries, self.cfgs.max_rank)
-        
-        # initialize optuna trial if exists
-        self.trial = trial if cfgs.use_optuna else None
-
-
-    def train(self):
-        """
-        Trains the model for the specified number of epochs.
-
-        :return: Highest validation accuracy.
-        """
-
-        validation_loss = self.validate()
-
-        
-        if self.fabric.is_global_zero: 
-            print(f"Run completed. Final mAP: {validation_loss}")
-
-            if self.cfgs.use_wandb:
-                wandb.run.summary["validation_loss"] = validation_loss
-                wandb.run.summary["state"] = "completed"
-                wandb.finish(quiet=True)
-
-        return validation_loss
 
 
     def validate(self): 
@@ -146,7 +118,9 @@ class Trainer_Visualize_Embedding_RNT(Base_Trainer):
 
             # visualize embeddings
             if self.fabric.is_global_zero: 
-                self.metric.compute_umap_plotly(save_path=self.cfgs.vis_save_path, dims=self.cfgs.vis_dim, reduction_method=self.cfgs.vis_reduction_method)
+
+                if self.cfgs.visualize_embeddings:
+                    self.metric.compute_umap_plotly(save_path=self.cfgs.vis_save_path, dims=self.cfgs.vis_dim, reduction_method=self.cfgs.vis_reduction_method)
 
                 # log to wandb 
                 if self.cfgs.use_wandb:
@@ -186,8 +160,6 @@ class Trainer_Visualize_Embedding_RNT(Base_Trainer):
         
         state = {
             "mm_model": self.model,
-            "optimizer": self.optimizer,
-            "loss": self.accumulated_loss,
         }
 
         try:
@@ -199,16 +171,13 @@ class Trainer_Visualize_Embedding_RNT(Base_Trainer):
             return
 
         try:
-            if remainder['lr_scheduler'] is not None:
-                self.lr_scheduler.load_state_dict(remainder['lr_scheduler'])
-        except Exception as e:
-            print(f"Error loading lr_scheduler: {e}")
-
-        try:
             self.loaded_epoch = remainder['epoch']
         except Exception as e:
             print(f"Error loading loaded_epoch: {e}")
 
+
+    def train(self):
+        pass
 
     def save_networks(save_dir, save_name):
         pass

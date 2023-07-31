@@ -53,8 +53,8 @@ class DEIT_Gradual_Fusion(nn.Module):
         """ 
         DeiT Model Options:
         """
-        # self.transformer = DeiTModel.from_pretrained('facebook/deit-base-distilled-patch16-224')
-        self.transformer = DeiTModel.from_pretrained('facebook/deit-base-distilled-patch16-384')
+        self.transformer = DeiTModel.from_pretrained('facebook/deit-base-distilled-patch16-224')
+        # self.transformer = DeiTModel.from_pretrained('facebook/deit-base-distilled-patch16-384')
 
         self.fabric.to_device(self.transformer)
         self.transformer = self.transformer.eval()  
