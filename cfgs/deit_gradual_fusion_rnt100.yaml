@@ -26,7 +26,7 @@ image_num_for_reid_validate: 25 # Default 25
 num_triplet_samples: 8 # Default 1
 
 # Model parameters 
-model_modalities: ['R', 'N', 'T']
+model_modalities: ['R', 'N']
 non_generalizable_inputs: False
 model_anchor_only_reid: False # false by default
 model_num_cls_tokens: 2
@@ -67,7 +67,7 @@ model_name: "deit_gradual_fusion"
 trainer_name: "trainer_rgbn_triplet"
 verbose: True # print more information
 max_rank: 50 # max number of ranks to calculate cmc and mAP
-n_trials: 100 # number of trials for optuna
+n_trials: 1 # number of trials for optuna
 
 # Weights and Biases Logging
 use_wandb: True
@@ -80,12 +80,27 @@ hyperparams:
   lr:
     min: 0.000001
     max: 0.00001
+    type: loguniform
   weight_decay:
     min: 0.0001
     max: 0.001
+    type: loguniform
   beta1:
     min: 0.80
     max: 0.90
+    type: float
   beta2:
     min: 0.97
     max: 0.98
+    type: float
+  model_num_cls_tokens: 
+    min: 2
+    max: 2
+    type: int
+  model_num_fusion_tokens: 
+    min: 2
+    max: 2
+    type: int
+  model_num_heads: 
+    opt: [8]
+    type: categorical
