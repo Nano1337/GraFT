@@ -1,0 +1,97 @@
+# TODO: Check which parameters here are actually used and prune out all the ones that aren't
+
+# General parameters
+use_optuna: False
+output_dir: '/data/datasets/research-datasets/output_dir'
+seed: 1234
+new_random: True
+phase: 'train'
+cfg_name: 'deit-prune-MLP'
+
+# Dataset parameters
+dataroot: '/data/datasets/research-datasets'
+dataset: 'reid_mm/RGBNT100'
+dataset_name: 'RGBNT100'
+workers: 128
+input_size: [224, 224] # 224 normally, 384 for larger deit
+hflip: 0.5 # threshold for random horizontal flip
+resize_min: 0.5 # only if data_augmentation is True
+resize_max: 1.0 # only if data_augmentation is True
+data_augmentation: False
+augment_type: "" # Optional: "random_erasure"
+train_ratio: 0.8 # use 80% of the data for training and 20% for validation
+one_hot: True
+image_num_for_reid_train: 1 # Default 1 -- DO NOT CHANGE THIS ONE AND num_triplet_samples AT SAME TIME THEY DO SAME THING
+image_num_for_reid_validate: 25 # Default 25
+num_triplet_samples: 8 # Default 1
+
+# Model parameters 
+model_modalities: ['R', 'N', 'T']
+non_generalizable_inputs: False
+model_anchor_only_reid: False # false by default
+model_num_cls_tokens: 2
+model_num_fusion_tokens: 2
+model_num_heads: 8
+vit_embed_dim: 768 # 384 for dino, 768 normally
+model_decoder_output_class_num: 50 # change this when changing datasets
+model_fusion_combos: 'ffd'
+data_token_step: 0
+pretrained_model: "distilled-224"
+
+# Loss parameters
+loss_fn: "center+ce+triplet_euclidean_soft_margin" 
+loss_weighting: 0.5
+center_weighting: 0.0005
+label_smoothing: 0.0
+alpha: 1
+
+# Optimizer parameters
+optimizer: 'adamw'
+lr: 0.00001
+weight_decay: 0.001
+beta1: 0.83
+beta2: 0.97
+lr_scheduler_name: 'warmup_cosine_lr'
+warmup_steps: 50
+max_lr: 0.01
+ 
+# Training parameters
+gpus: [0, 1, 2, 3]
+#gpus: [4, 5, 6, 7]
+#gpus: [5,7]
+
+ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
+ckpt_full_path: '/data/datasets/research-datasets/ckpt_dir/20230730-202650-ffd_three-loss-euclidean_DEiT-B-224-distilled-inference/best.pth' #'/data/datasets/research-datasets/ckpt_dir/20230727-112754-dino_middle_fusion_noconv_exp2_flex_size/best.pth
+batch_size: 20
+num_epochs: 40
+print_freq: 50
+model_name: "deit_gradual_fusion"
+trainer_name: "trainer_rgbn_triplet"
+verbose: True # print more information
+max_rank: 50 # max number of ranks to calculate cmc and mAP
+n_trials: 1 # number of trials for optuna
+
+# Weights and Biases Logging
+use_wandb: True
+wandb_project: "mm-mafia-reid-prune"
+study_name: "deit-prune-MLP"
+wandb_run_name: "deit-prune-MLP"
+wandb_trial_name: "sparsity75-iters10"
+
+hyperparams:
+  lr:
+    min: 0.00001
+    max: 0.00001
+    type: loguniform
+  weight_decay:
+    min: 0.001
+    max: 0.001
+    type: loguniform
+  beta1:
+    min: 0.83
+    max: 0.83
+    type: float
+  beta2:
+    min: 0.97
+    max: 0.97
+    type: float

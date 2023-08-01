@@ -44,7 +44,7 @@ def remove_indices(tensor, indices, axis):
     return new_tensor
 
 # Overall prune step for the entire model, prunes in place.
-def prune_model(model, fabric, num_neurons_to_prune = 0, num_heads_to_prune = 0):
+def structured_prune_model(model, fabric, num_neurons_to_prune = 0, num_heads_to_prune = 0):
     if num_neurons_to_prune != 0:
         # Grab weights to measure importance
         MLPs_to_prune = []

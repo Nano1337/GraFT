@@ -20,7 +20,8 @@ import loss
 import numpy as np
 from utils.opt import get_cfgs
 
-from prune_utils import prune_model
+#from prune_utils import unstructured_prune_model
+import torch.nn.utils.prune as prune
 
 torch.set_float32_matmul_precision("medium")
 
@@ -65,11 +66,17 @@ def main(cfgs: dict):
         trainer.print_networks()
 
     max_pruning_iterations = 10
-    target_sparsity = .75
-    num_neurons_to_prune = int(target_sparsity
-                            * model.transformer.encoder.layer[0].intermediate.dense.weight.size()[1]
-                            * len(model.transformer.encoder.layer)
-                            / max_pruning_iterations)
+    amount = .2
+
+    parameters_to_prune = []
+    for layer in model.transformer.encoder.layer:
+        parameters_to_prune.append((layer.intermediate.dense, 'weight'))
+        parameters_to_prune.append((layer.output.dense, 'weight'))
+        parameters_to_prune.append((layer.attention.attention.query, 'weight'))
+        parameters_to_prune.append((layer.attention.attention.key, 'weight'))
+        parameters_to_prune.append((layer.attention.attention.value, 'weight'))
+        parameters_to_prune.append((layer.attention.output, 'weight'))
+    print('Number of Linear Layers in Model:', len(parameters_to_prune))
 
 
     for iter in range(max_pruning_iterations):
@@ -102,9 +109,10 @@ def main(cfgs: dict):
         wandb.run.save()
 
         print('Prune iter: ', iter)
-        prune_model(model, fabric, num_neurons_to_prune = num_neurons_to_prune)
-        
+        #prune_model(model, fabric, num_neurons_to_prune = num_neurons_to_prune)
+        prune.global_unstructured(parameters_to_prune, pruning_method=prune.L1Unstructured,amount=amount)
         trainer.train()
+
 
     
     

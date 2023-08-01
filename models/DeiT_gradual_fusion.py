@@ -67,6 +67,9 @@ class DEIT_Gradual_Fusion(nn.Module):
         elif self.cfg.pretrained_model == "distilled-224":
             self.transformer = DeiTModel.from_pretrained(
                 'facebook/deit-base-distilled-patch16-224')
+        elif self.cfg.pretrained_model == "distilled-224-small":
+            self.transformer = DeiTModel.from_pretrained(
+                'facebook/deit-small-distilled-patch16-224')
         else:
             raise ValueError("Invalid pretrained model")
 
