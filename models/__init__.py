@@ -1,6 +1,7 @@
 import torch
 
 from models.DeiT_gradual_fusion import DEIT_Gradual_Fusion
+from models.DeiT_gradual_fusion_scalable import DEIT_Gradual_Fusion_Scalable
 
 
 def get_model(cfgs: dict, fabric: any) -> torch.nn.Module:
@@ -18,6 +19,8 @@ def get_model(cfgs: dict, fabric: any) -> torch.nn.Module:
     """
     if cfgs.model_name == "deit_gradual_fusion":
         model = DEIT_Gradual_Fusion(cfg=cfgs, fabric=fabric)
+    elif cfgs.model_name == "deit_gradual_fusion_scalable":
+        model = DEIT_Gradual_Fusion_Scalable(cfg=cfgs, fabric=fabric)
     else:
         model = None
 

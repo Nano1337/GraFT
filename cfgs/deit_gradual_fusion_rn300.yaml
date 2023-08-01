@@ -4,7 +4,7 @@
 use_optuna: True
 output_dir: '/data/datasets/research-datasets/output_dir'
 phase: 'train'
-cfg_name: 'deit-scaling-RN300'
+cfg_name: 'deit-scaling-RN300-fixed'
 
 # Dataset parameters
 dataroot: '/data/datasets/research-datasets'
@@ -30,7 +30,8 @@ model_anchor_only_reid: False # false by default
 model_num_cls_tokens: 2
 model_num_fusion_tokens: 2
 model_num_heads: 8
-model_num_transformer_layers: 6
+model_dim_feedforward: 2048
+model_num_transformer_layers: 4
 vit_embed_dim: 768 # 384 for dino, 768 normally
 model_decoder_output_class_num: 150 # change this when changing datasets
 model_fusion_combos: 'ffd'
@@ -55,14 +56,14 @@ warmup_steps: 50
 max_lr: 0.01
  
 # Training parameters
-gpus: [0, 1, 2, 3]
+gpus: [1, 2, 3, 4]
 # gpus: [4, 5, 6, 3]
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
 ckpt_full_path: null
 batch_size: 20
 num_epochs: 40
 print_freq: 50
-model_name: "deit_gradual_fusion"
+model_name: "deit_gradual_fusion_scalable"
 trainer_name: "trainer_rgbn_triplet"
 verbose: True # print more information
 max_rank: 50 # max number of ranks to calculate cmc and mAP
@@ -71,9 +72,9 @@ n_trials: 2 # number of trials for optuna
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: "mm-mafia-reid-hpo"
-study_name: "deit-scaling-RN300"
-wandb_run_name: "deit-scaling-RN300"
-wandb_trial_name: "ffd_three-loss-euclidean_DEiT-B-224-distilled-RN300-6layer"
+study_name: "deit-scaling-RN300-fixed"
+wandb_run_name: "deit-scaling-RN300-fixed"
+wandb_trial_name: "ffd_three-loss-euclidean_DEiT-B-224-distilled-RN300-4layers"
 
 hyperparams:
   lr:
@@ -94,12 +95,12 @@ hyperparams:
     type: float
   model_num_cls_tokens: 
     min: 2
-    max: 5
+    max: 2
     type: int
   model_num_fusion_tokens: 
     min: 2
-    max: 10
+    max: 2
     type: int
   model_num_heads: 
-    opt: [1, 2, 4, 8, 16]
+    opt: [8]
     type: categorical

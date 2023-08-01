@@ -29,9 +29,9 @@ def weights_init_classifier(m: nn.Module) -> None:
             nn.init.constant_(m.bias, 0.0)
 
 
-class DEIT_Gradual_Fusion(nn.Module):
+class DEIT_Gradual_Fusion_Scalable(nn.Module):
     def __init__(self, cfg: Dict[str, Union[int, str]], fabric: any) -> None:
-        super(DEIT_Gradual_Fusion, self).__init__()
+        super(DEIT_Gradual_Fusion_Scalable, self).__init__()
         self.cfg = cfg
         self.fabric = fabric
         hidden_size = self.cfg.vit_embed_dim
@@ -52,13 +52,15 @@ class DEIT_Gradual_Fusion(nn.Module):
             self.modality_transformers[modality] = self.fabric.to_device(
                 nn.Sequential(
                     nn.TransformerEncoderLayer(d_model=hidden_size,
-                                           nhead=self.cfg.model_num_heads)))
+                                           nhead=self.cfg.model_num_heads, 
+                                           dim_feedforward=cfg.model_dim_feedforward)))
             
             for i in range(self.cfg.model_num_transformer_layers - 1):
                 self.modality_transformers[modality].add_module(
                     f"transformer_encoder_layer_{i}",
                     nn.TransformerEncoderLayer(d_model=hidden_size,
-                                               nhead=self.cfg.model_num_heads))
+                                               nhead=self.cfg.model_num_heads, 
+                                               dim_feedforward=cfg.model_dim_feedforward))
 
         self.fusion_tokens = self.fabric.to_device(
             nn.Parameter(
