@@ -1,0 +1,575 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Get Number</title>
+</head>
+<body>
+    <form action="/get_number" method="post">
+        <button type="submit">Get Number</button>
+    </form>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ML Model Job Scheduler</title>
+
+
+    <style>
+        body {
+            font-family: Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;  /* Vertical stacking */
+            height: 100vh; 
+            align-items: center;
+            background: #000f2b;
+            color: white;
+        }
+
+        input[type="text"] {
+            background-color: white;
+            font-size: 120%;
+            border-radius: 10px;
+            border: none;
+            padding: 5px;
+            margin-right: 10px;
+        }
+
+        body.night-mode {
+            background: #000f2b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+
+        button {
+            padding: 10px 20px;
+            font: inherit;
+            transition: 0.3s;
+            background-color: #203968;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #3b5e9e;
+        }
+
+        #jobOutput, #killOutput, #killAllOutput, #jobStatus, #jobQueue {
+            margin-top: 10px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px 10px;
+        }
+
+        .container-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px 10px;
+        }
+
+        .boxy:empty {
+            display: none;
+        }
+        .boxy:not(:empty) {
+            background-color: #cbdcff;
+            color: black
+            /* Other styles for the first div */
+        }
+
+        .boxy {
+            padding: 20px; /* Adjust the padding value to your preference */
+            width: 830px;
+            height: 350px; /* Set the maximum height to 50px */
+            overflow: auto; /* Add scrollbars when content exceeds the height */
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .action {
+            display: flex;
+            flex-wrap: wrap;
+            flex-shrink: 1;
+            width: 400px;
+            height: 250px;
+            background-color:#85b0ff;
+            border-radius: 10px;
+            justify-content: center;
+            align-content: center;
+        }
+
+        .action h2 {
+            color: #000f2b;
+            font-size: 150%;
+        }
+
+        .action button {
+            margin-top: 20px;
+        }
+
+        .action-button button {
+            background-color: #203968;
+            border-radius: 10px;
+            padding: 30px;
+            width: 400px;
+            font-size: 150%;
+            font-weight: bold;
+        }
+
+        .action-button button:hover {
+            background-color: #3b5e9e;
+        }
+
+        .header {
+            width: auto;
+            padding: 10px;
+            text-align: center;
+            border-radius: 10px;
+            border: 2px solid white;
+        }
+
+
+        .jobBox {
+            padding: 10px;
+            background-color: #cbdcff;
+            color: black;
+            margin-bottom: 10px;
+            border-radius: 10px;
+        }
+
+
+        .gpu {
+            padding: 20px;
+            background-color: #cbdcff;
+            color: black;
+            overflow: auto;
+            max-height: 350px;
+            margin-right: 20px;
+            border-radius: 10px;
+        }
+
+        .gpu:empty {
+            display: none;
+        }
+
+        /* Style the tabs */
+        .tab {
+            overflow: auto;
+            width: 830px;
+        }
+
+        /* Style the buttons that are used to open the tab content */
+        .tablinks {
+            background-color: inherit;
+            margin-top: 15px;
+            border-radius: 0;
+            float: left;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            font-family: Arial, sans-serif;
+            background-color: #203968; 
+            color: white; /* Change this to match your desired tab color */
+            font-weight: bold;
+            border-radius: 10px 10px 0px 0px;
+            width: calc(100% / 5); /* Adjust the width based on the number of tabs */
+            box-sizing: border-box;
+        }
+
+        /* Change background color of buttons when they are active or hovered over */
+        .tab button.active, .tab button:hover {
+            background-color: #3b5e9e;
+        }
+
+        /* Style the tab content */
+        .tabcontent {
+            height: 360px; /* Set the maximum height to 50px */
+            overflow: auto; /* Add scrollbars when content exceeds the height */
+            /* background-color: lightblue; */
+            border: 1px solid #203968;
+            background: #e9f0ff;
+            padding: 10px;
+            display: none;
+            border-radius: 0px 0px 10px 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 30%;
+            background-color: #cbdcff;
+            color: #203968;
+            text-align: center;
+            margin-left: 5px;
+        }
+
+        .action-output {
+            text-align: center;
+            height: 25px;
+            overflow: auto;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    
+
+
+
+
+    <script>
+        function launchServer() {
+            var port = $("#port").val();
+            $.ajax({
+                type: "POST",
+                url: "/launch_server",
+                data: {port: port},
+                success: function(response) {
+                    $("#launchServerOutput").text(response);
+                },
+                error: function(error) {
+                    $("#launchServerOutput").text("Error: " + error.responseText);
+                }
+            });
+        }
+        function submitJob() {
+            var script = $("#scriptPath").val();
+            $.ajax({
+                type: "POST",
+                url: "/submit_job",
+                data: {script: script},
+                success: function(response) {
+                    $("#jobOutput").text(response);
+                },
+                error: function(error) {
+                    $("#jobOutput").text("Error: " + error.responseText);
+                }
+            });
+        }
+
+        function killJob(screenName) {
+            $.ajax({
+                type: "POST",
+                url: "/kill_job",
+                data: {screen_name: screenName},
+                success: function(response) {
+                    $("#killOutput").text(response);
+                },
+                error: function(error) {
+                    $("#killOutput").text("Error: " + error.responseText);
+                }
+            });
+        }
+
+        function killAllJobs() {
+            if (confirm("Are you sure you want to kill all jobs?")) {
+                $.ajax({
+                    type: "POST",
+                    url: "/kill_all_jobs",
+                    success: function(response) {
+                        alert(response);
+                    },
+                    error: function(error) {
+                        alert("Error: " + error.responseText);
+                    }
+                });
+            }
+        }
+
+        function getJobStatus() {
+            $.ajax({
+                type: "GET",
+                url: "/get_job_status",
+                success: function(response) {
+                    // Create containers for each job status
+                    var containers = {
+                        "running": document.getElementById('runningJobs'),
+                        "completed": document.getElementById('completedJobs'),
+                        "failed": document.getElementById('failedJobs'),
+                        "killed":document.getElementById('killedJobs'),
+                        "requeued until memory is available":document.getElementById('queuedJobs'),
+                        "queued": document.getElementById('queuedJobs')
+                    }
+
+                    // Clear the containers before adding new content
+                    for (let status in containers) {
+                        while (containers[status].firstChild) {
+                            containers[status].firstChild.remove();
+                        }
+                    }
+
+                    var job_nums = {
+                        "running": 0,
+                        "completed": 0,
+                        "failed": 0,
+                        "killed": 0,
+                        "queued": 0
+                    }
+                    response.forEach(element => {
+                        var jobBox = document.createElement('div');
+                        jobBox.className = "jobBox";
+
+                        // Create job elements
+                        var script = createJobElement("Script", element.script);
+                        var jobId = createJobElement("Job ID", element.job_id);
+                        var status = createJobElement("Status", element.status);
+                        var screenName = createJobElement("Screen Name", element.screen_name);
+                        var timestamp = createJobElement("Timestamp", element.timestamp);
+
+                        // Append elements to the jobBox
+                        jobBox.appendChild(script);
+                        jobBox.appendChild(jobId);
+                        jobBox.appendChild(status);
+                        jobBox.appendChild(screenName);
+                        jobBox.appendChild(timestamp);
+
+                        // Append additional elements as necessary
+                        if (element.log_file) {
+                            var logFileButton = document.createElement('button');
+                            logFileButton.textContent = "View Log File";
+                            logFileButton.style.marginRight = "10px";
+                            logFileButton.onclick = function() {
+                                fetchLogFileContent(`/log-file/${element.log_file}`);
+                            };
+                            jobBox.appendChild(logFileButton);
+                        }
+                        if (element.status === "running" || element.status === "requeued until memory is available" || element.status === "queued") {
+                            var killButton = document.createElement('button');
+                            killButton.textContent = "Kill Job";
+                            killButton.onclick = function() {
+                                killJob(element.job_id);
+                            };
+                            jobBox.appendChild(killButton);
+                        }
+                        
+                        // Append the jobBox to the appropriate container
+                        containers[element.status].appendChild(jobBox);
+
+                        if (element.status === "requeued until memory is available")
+                            element.status = "queued";
+                        job_nums[element.status] += 1;
+                    });
+
+                    // Update the job status counts
+                    for (let status in job_nums) {
+                        $(`#${status}JobsTab`).find('.badge').text(job_nums[status]);
+                    }
+                },
+                error: function(error) {
+                    console.error("Error: ", error);
+                    $("#jobStatus").text("Error occurred");
+                }
+            });
+        }
+
+
+        function createJobElement(label, value) {
+            var element = document.createElement('p');
+            var boldElement = document.createElement('strong');
+            boldElement.textContent = `${label}: `;
+            element.appendChild(boldElement);
+            element.append(value);
+            return element;
+        }
+
+
+        function getJobQueue() {
+            $.ajax({
+                type: "GET",
+                url: "/get_job_queue",
+                success: function(response) {
+                    $("#jobQueue").html(response);
+                },
+                error: function(error) {
+                    $("#jobQueue").text("Error: " + error.responseText);
+                }
+            });
+        }
+
+        function checkErrorLog() {
+            $.ajax({
+                type: "POST",
+                url: "/check_error_log",
+                success: function(response) {
+                    $("#log-content").html(response);
+                },
+                error: function(error) {
+                    $("#log-content").text("Error: " + error.responseText);
+                }
+            });
+        }
+
+        function fetchLogFiles() {
+            fetch('/log-files')
+                .then(response => response.json())
+                .then(data => {
+                    const logFilesDiv = document.getElementById('log-files');
+                    logFilesDiv.innerHTML = '';
+
+                    data.forEach(logFile => {
+                        const link = document.createElement('a');
+                        link.href = `/log-file/${logFile}`;
+                        link.innerText = logFile;
+                        link.addEventListener('click', function(event) {
+                            event.preventDefault();
+                            fetchLogFileContent(`/log-file/${logFile}`);
+                        });
+
+                        logFilesDiv.appendChild(link);
+                        logFilesDiv.appendChild(document.createElement('br'));
+                    });
+                });
+        }
+
+        function fetchLogFileContent(logFile) {
+            fetch(`${logFile}`)
+                .then(response => response.text())
+                .then(data => {
+                    const fileName = logFile.substring(logFile.lastIndexOf('/') + 1);
+                    const logContentDiv = document.getElementById('log-content');
+                    
+                    // Create a new h2 element for the title
+                    const title = document.createElement('h2');
+                    title.innerText = fileName; // Set the text to the file name
+                    const pElement = document.createElement('p');
+                    pElement.style.whiteSpace = 'pre-wrap';
+                    pElement.textContent = data;
+
+                    // Clear the div and append the title and content
+                    logContentDiv.innerHTML = '';
+                    logContentDiv.appendChild(title);
+                    logContentDiv.appendChild(pElement);
+                });
+        }
+
+        function fetchNvidiaSmi() {
+            fetch('/nvidia-smi')
+                .then(response => response.text())
+                .then(data => {
+                    const smiDiv = document.getElementById('nvidia-smi');
+                    const smiElement = document.createElement('pre');
+                    smiElement.textContent = data;
+ 
+                    smiDiv.innerHTML = '';
+                    smiDiv.appendChild(smiElement);
+                });
+        }
+
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        function toggleNightMode() {
+            var body = document.body;
+            body.classList.toggle("night-mode");
+            var nightModeButton = document.getElementById("nightModeButton");
+            if (body.classList.contains("night-mode")) {
+                nightModeButton.textContent = "Day Mode";
+            } else {
+                nightModeButton.textContent = "Night Mode";
+            }
+        }
+
+        window.onload = function() {
+            document.getElementById("runningJobsTab").click();
+        }
+
+        fetchNvidiaSmi();
+
+        // Set up an interval to update the data every 30 seconds
+        setInterval(fetchNvidiaSmi, 30000);
+
+        setInterval(getJobStatus, 3000);  // Update every 3 seconds (adjust as needed)
+        getJobStatus();  // Initial fetch when the page loads
+
+        
+    </script>
+
+
+
+
+</head>
+<body>
+    <h1>ML Model Job Scheduler</h1>
+    <!-- <button id="nightModeButton" onclick="toggleNightMode()">Night Mode</button> -->
+    <div class="container">
+        <div>
+            <h2 class="header" style="margin-right: 10px;">Actions</h2>
+            <div class="container-2">
+                <div class="action" >
+                    <h2>Launch Server</h2>
+                    <input style="width: 80%;margin-bottom: 10px;" type="text" id="port" placeholder="Enter the port number">
+                    <button style="margin-bottom: 10px;" onclick="launchServer()">Launch Server</button><br>
+                    <div class="action-output" style="width: 80%;" id="launchServerOutput"></div>
+                </div>
+
+                <div class="action">
+                    <h2>Submit Job</h2>
+                    <input style="width: 80%;margin-bottom: 10px;" type="text" id="scriptPath" placeholder="Enter the path to the bash script">
+                    <button onclick="submitJob()">Submit Job</button>
+                    <div class="action-output" style="width: 80%;" id="jobOutput"></div>
+                </div>
+
+                <div class="action-button">
+                    <button onclick="killAllJobs()">&#9447  Kill All Jobs</button><br>
+                </div>
+
+                <div class="action-button">
+                    <button onclick="checkErrorLog()">&#9432  Check Error Log</button><br>
+                </div>
+            </div>
+            <div>
+                <h2 class="header" style="margin-right: 10px;">GPU Status</h2>
+                <div id="nvidia-smi" class="gpu"></div>
+            </div>
+        </div>
+        <div>
+            <div class="tab">
+                <button id="runningJobsTab" class="tablinks" onclick="openTab(event, 'runningJobs')">Running <span class="badge">0</span></button>
+                <button id="completedJobsTab" class="tablinks" onclick="openTab(event, 'completedJobs')">Completed <span class="badge">0</span></button>
+                <button id="failedJobsTab" class="tablinks" onclick="openTab(event, 'failedJobs')">Failed <span class="badge">0</span></button>
+                <button id="killedJobsTab" class="tablinks" onclick="openTab(event, 'killedJobs')">Killed <span class="badge">0</span></button>
+                <button id="queuedJobsTab" class="tablinks" onclick="openTab(event, 'queuedJobs')">Queued <span class="badge">0</span></button>
+            
+            
+                <div id="runningJobs" class="tabcontent"></div>
+                <div id="completedJobs" class="tabcontent"></div>
+                <div id="failedJobs" class="tabcontent"></div>
+                <div id="killedJobs" class="tabcontent"></div>
+                <div id="queuedJobs" class="tabcontent"></div>
+            </div>
+            <h2 class="header">Log Content</h2>
+            <div id="log-content" class="boxy"></div>
+        </div>
+    </div>
+
+</body>
+</html>

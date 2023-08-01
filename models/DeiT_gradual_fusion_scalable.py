@@ -53,6 +53,12 @@ class DEIT_Gradual_Fusion(nn.Module):
                 nn.Sequential(
                     nn.TransformerEncoderLayer(d_model=hidden_size,
                                            nhead=self.cfg.model_num_heads)))
+            
+            for i in range(self.cfg.model_num_transformer_layers - 1):
+                self.modality_transformers[modality].add_module(
+                    f"transformer_encoder_layer_{i}",
+                    nn.TransformerEncoderLayer(d_model=hidden_size,
+                                               nhead=self.cfg.model_num_heads))
 
         self.fusion_tokens = self.fabric.to_device(
             nn.Parameter(
