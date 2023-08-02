@@ -118,7 +118,7 @@ class DEIT_Gradual_Fusion(nn.Module):
         anchor_output = []
         cls_anchor = {}
         for modality in self.cfg.model_modalities:
-            z_anchors[modality] = self.transformer(input_anchors[modality])
+            z_anchors[modality] = self.transformer(input_anchors[modality], interpolate_pos_embedding=True)
             z_anchors[modality] = z_anchors[modality].last_hidden_state.permute(1, 0, 2)
             cls_anchor[modality] = self.cls_anchor[modality].repeat(1, z_anchors[modality].shape[1], 1)
             if self.cfg.model_fusion_combos[0] == "f":
