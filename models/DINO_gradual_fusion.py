@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from transformers import DeiTModel
+from transformers import DeiTModel, ViTModel
 import torch.distributed as dist
 from torch.nn.modules.container import ModuleDict, ParameterDict
 from typing import Dict, Union
@@ -29,9 +29,9 @@ def weights_init_classifier(m: nn.Module) -> None:
             nn.init.constant_(m.bias, 0.0)
 
 
-class DEIT_Gradual_Fusion(nn.Module):
+class DINO_Gradual_Fusion(nn.Module):
     def __init__(self, cfg: Dict[str, Union[int, str]], fabric: any) -> None:
-        super(DEIT_Gradual_Fusion, self).__init__()
+        super(DINO_Gradual_Fusion, self).__init__()
         self.cfg = cfg
         self.fabric = fabric
         hidden_size = self.cfg.vit_embed_dim
@@ -61,23 +61,15 @@ class DEIT_Gradual_Fusion(nn.Module):
 
         print("Loading pretrained transformer...")
 
-        if self.cfg.pretrained_model == "distilled-384": 
-            self.transformer = DeiTModel.from_pretrained(
-                'facebook/deit-base-distilled-patch16-384')
-        elif self.cfg.pretrained_model == "distilled-224":
-            self.transformer = DeiTModel.from_pretrained(
-                'facebook/deit-base-distilled-patch16-224')
-        elif self.cfg.pretrained_model == "distilled-224-small":
-            self.transformer = DeiTModel.from_pretrained(
-                'facebook/deit-small-distilled-patch16-224')
+        if self.cfg.pretrained_model == "dino-vit":
+            self.transformer = ViTModel.from_pretrained('facebook/dino-vits16')
         else:
             raise ValueError("Invalid pretrained model")
 
         self.fabric.to_device(self.transformer)
-        self.transformer = self.transformer.eval()
-
         for param in self.transformer.parameters():
             param.requires_grad = False
+
         print("Transformer loaded")
 
         self.bottleneck = nn.BatchNorm1d(self.feat_dim)
@@ -118,7 +110,7 @@ class DEIT_Gradual_Fusion(nn.Module):
         anchor_output = []
         cls_anchor = {}
         for modality in self.cfg.model_modalities:
-            z_anchors[modality] = self.transformer(input_anchors[modality])
+            z_anchors[modality] = self.transformer(input_anchors[modality], interpolate_pos_encoding=self.cfg.interpolate_pos_encoding)
             z_anchors[modality] = z_anchors[modality].last_hidden_state.permute(1, 0, 2)
             cls_anchor[modality] = self.cls_anchor[modality].repeat(1, z_anchors[modality].shape[1], 1)
             if self.cfg.model_fusion_combos[0] == "f":
@@ -170,7 +162,7 @@ class DEIT_Gradual_Fusion(nn.Module):
             pos_output = []
             cls_pos = {}
             for modality in self.cfg.model_modalities:
-                z_pos[modality] = self.transformer(input_positives[modality])
+                z_pos[modality] = self.transformer(input_positives[modality], interpolate_pos_encoding=self.cfg.interpolate_pos_encoding)
                 z_pos[modality] = z_pos[modality].last_hidden_state.permute(
                     1, 0, 2)
                 cls_pos[modality] = self.cls_anchor[modality].repeat(
@@ -216,7 +208,7 @@ class DEIT_Gradual_Fusion(nn.Module):
             neg_output = []
             cls_neg = {}
             for modality in self.cfg.model_modalities:
-                z_neg[modality] = self.transformer(input_negatives[modality])
+                z_neg[modality] = self.transformer(input_negatives[modality], interpolate_pos_encoding=self.cfg.interpolate_pos_encoding)
                 z_neg[modality] = z_neg[modality].last_hidden_state.permute(
                     1, 0, 2)
                 cls_neg[modality] = self.cls_anchor[modality].repeat(

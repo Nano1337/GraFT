@@ -67,7 +67,7 @@ def make_dataset(
     if train is False:
         for query in os.listdir(root_dir + "/rgbir/query"):
             target_q = query.split("_")[0]
-            target_dir = os.path.join(directory, target_q, query)
+            target_dir = os.path.join(directory, target_q[-4:], query)
             instances.append((target_dir, query.split(".")[0]))
 
     #  filter directory for specified number of image duplicates per pose
@@ -89,7 +89,7 @@ def make_dataset(
             else:
                 fnames = list(filter(lambda x: filter_validate_images(x, cfgs), fnames))
 
-            #  go through remaining files and get a positive image for each one
+            #  go through remaining files and add them to instances
             for fname in sorted(fnames):
                 anchor = os.path.join(root, fname)
                 if is_valid_file(anchor):
@@ -174,6 +174,7 @@ class RGBNT_MultimodalDatasetFolder(VisionDataset):
 
             # select a positive instance from the same class, and a negative instance from a diff class
             all_items = np.asarray(list(samples.values())[0])
+            print(all_items)
 
             new_samples = {modality: [] for modality in self.modality_list}
             for i, item in enumerate(all_items):
@@ -195,7 +196,6 @@ class RGBNT_MultimodalDatasetFolder(VisionDataset):
                              samples[modality][i][1]))
 
             samples = new_samples
-            print("Length of sample set:", len(list(samples.values())))
 
         elif self.mode == "validate":
             samples = {
@@ -204,6 +204,7 @@ class RGBNT_MultimodalDatasetFolder(VisionDataset):
                     class_to_idx, self.cfgs, extensions, is_valid_file, train=False, root_dir=self.root)
                 for modality in self.modality_list
             }
+            print(list(samples.values())[0])
 
         for modality, modality_samples in samples.items():
             if len(modality_samples) == 0:
@@ -254,14 +255,15 @@ class RGBNT_MultimodalDatasetFolder(VisionDataset):
                 if self.mode == "train":
                     path, pos, neg, target = self.samples[modality][index]
                     sample = [
-                        pil_loader(x, convert_rgb=(modality == 'R' or modality == "T"))
+                        pil_loader(x, convert_rgb=True)
                         for x in [path, pos, neg]
                     ]
                 else:
                     path, target = self.samples[modality][index]
-                    sample = pil_loader(path, convert_rgb=(modality == 'R' or modality == "T"))
+                    sample = pil_loader(path, convert_rgb=True)
                 sample_dict[modality] = sample
         return list(sample_dict.values()), target
+
 
     def collate_fn(self, batch):
         batch_unzipped = list(zip(*batch))

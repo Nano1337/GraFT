@@ -96,6 +96,12 @@ def main(cfgs: dict, fabric: Fabric, trial: Trial = None) -> float:
         print("Training set size:", len(train_dataset))
         print("Validation set size:", len(val_dataset))
 
+    num_batches = 0
+    for batch_input, batch_target in val_loader:
+        num_batches += 1
+    print("Number of batches for validation:", num_batches)
+    print("Dataloader size total:", num_batches * cfgs.batch_size)
+
     config_name = os.path.splitext(os.path.basename(cfgs.cfg_name))[0]
     unique_dir_name = time.strftime("%Y%m%d-%H%M%S-") + config_name
     output_dir = Path(cfgs.output_dir, unique_dir_name)

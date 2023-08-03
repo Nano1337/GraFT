@@ -35,7 +35,7 @@ def parse_string_list(string_list: List[str]) -> Tuple[List[int], List[int]]:
         if len(parts) >= 3:
             try:
                 id_num = int(parts[0])
-                camera_id = int(parts[1][1:])
+                camera_id = int(parts[1][1:]) #* int(parts[2]) # ONLY USE PARTS[2] FOR RGBNT201!!!
                 ids.append(id_num)
                 camera_ids.append(camera_id)
             except ValueError:
@@ -138,35 +138,19 @@ class Trainer_RGBN_Triplet(Base_Trainer):
             epoch_iter += self.cfgs.batch_size
             self.fabric.barrier()
 
-            # Retrieve input images
-            if self.cfgs.non_generalizable_inputs:
-                batched_rgb = []
-                batched_ir = []
+            inputs = {}
+            for m, modality in enumerate(self.cfgs.model_modalities):
+                inputs[modality] = []
+
                 for b in range(len(batch_input)):
-                    batched_rgb.append(torch.stack(batch_input[b][0], dim=0))
-                    batched_ir.append(torch.stack(batch_input[b][1], dim=0))
-                batched_rgb = self.fabric.to_device(
-                    torch.stack(batched_rgb, dim=0))
-                batched_ir = self.fabric.to_device(
-                    torch.stack(batched_ir, dim=0))
+                    inputs[modality].append(
+                        torch.stack(batch_input[b][m], dim=0))
 
-                output_class, embeddings = self.model(batched_rgb, batched_ir)
+                inputs[modality] = self.fabric.to_device(
+                    torch.stack(inputs[modality], dim=0))
 
-            else:
-                # NEW VERSION
-                inputs = {}
-                for m, modality in enumerate(self.cfgs.model_modalities):
-                    inputs[modality] = []
-
-                    for b in range(len(batch_input)):
-                        inputs[modality].append(
-                            torch.stack(batch_input[b][m], dim=0))
-
-                    inputs[modality] = self.fabric.to_device(
-                        torch.stack(inputs[modality], dim=0))
-
-                # Forward pass
-                output_class, embeddings = self.model(inputs)
+            # Forward pass
+            output_class, embeddings = self.model(inputs)
 
             # Convert one-hot encoded output to class indices
             preds = torch.argmax(output_class, dim=-1)
@@ -217,6 +201,7 @@ class Trainer_RGBN_Triplet(Base_Trainer):
                         f"Data: {(iter_start_time - iter_data_time):.4f}\t")
 
             iter_data_time = time.time()
+            print(i, "Iterations completed")
 
     def train(self) -> float:
         """Trains the model for the specified number of epochs.
@@ -277,37 +262,27 @@ class Trainer_RGBN_Triplet(Base_Trainer):
         self.model.eval()
         self.metric.reset()
 
+        num_iter = 0
         with torch.no_grad():
+            
             for batch_input, batch_target in self.val_loader:
+                num_iter += 1
+
                 pid, camid = parse_string_list(batch_target)
-
-                if self.cfgs.non_generalizable_inputs:
-                    batched_rgb, batched_ir = [], []
+                print(len(pid), "num iter", num_iter)
+                inputs = {}
+                for m, modality in enumerate(self.cfgs.model_modalities):
+                    inputs[modality] = []
                     for b in range(len(batch_input)):
-                        batched_rgb.append(batch_input[b][0])
-                        batched_ir.append(batch_input[b][1])
-
-                    batched_rgb = self.fabric.to_device(
-                        torch.stack(batched_rgb, dim=0))
-                    batched_ir = self.fabric.to_device(
-                        torch.stack(batched_ir, dim=0))
-                    embeddings = self.model(batched_rgb,
-                                            batched_ir,
-                                            train_mode=False)
-
-                else:
-                    # NEW VERSION
-                    inputs = {}
-                    for m, modality in enumerate(self.cfgs.model_modalities):
-                        inputs[modality] = []
-                        for b in range(len(batch_input)):
-                            inputs[modality].append(batch_input[b][m])
-                        inputs[modality] = self.fabric.to_device(
-                            torch.stack(inputs[modality], dim=0))
-                    embeddings = self.model(inputs, train_mode=False)
+                        inputs[modality].append(batch_input[b][m])
+                    inputs[modality] = self.fabric.to_device(
+                        torch.stack(inputs[modality], dim=0))
+                
+                embeddings = self.model(inputs, train_mode=False)
 
                 self.metric.update(embeddings["z_reparamed_anchor"], pid,
                                    camid)
+                
 
             # after all batches are processed, get final results
             cmc, mAP = self.metric.compute()

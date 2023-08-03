@@ -30,11 +30,12 @@ model_anchor_only_reid: False # false by default
 model_num_cls_tokens: 2
 model_num_fusion_tokens: 2
 model_num_heads: 8
-vit_embed_dim: 768 # 384 for dino, 768 normally
+vit_embed_dim: 384 # 384 for dino, 768 normally
 model_decoder_output_class_num: 141 # change this when changing datasets
 model_fusion_combos: 'ffd'
 data_token_step: 0
-pretrained_model: "distilled-224"
+interpolate_pos_encoding: True
+pretrained_model: "dino-vit"
 
 # Loss parameters
 loss_fn: "center+ce+triplet_euclidean_soft_margin" 
@@ -54,7 +55,7 @@ warmup_steps: 50
 max_lr: 0.01
  
 # Training parameters
-gpus: [1, 2, 3, 4]
+gpus: [0, 1, 2, 3]
 #gpus: [4, 5, 6, 7]
 #gpus: [5,7]
 
@@ -63,7 +64,7 @@ ckpt_full_path: null
 batch_size: 20
 num_epochs: 40
 print_freq: 50
-model_name: "deit_gradual_fusion"
+model_name: "dino_gradual_fusion"
 trainer_name: "trainer_rgbn_triplet"
 verbose: True # print more information
 max_rank: 50 # max number of ranks to calculate cmc and mAP
@@ -74,7 +75,7 @@ use_wandb: True
 wandb_project: "mm-mafia-reid-rnt201"
 study_name: "mm-mafia-reid-rnt201-initial"
 wandb_run_name: "mm-mafia-reid-rnt201-initial"
-wandb_trial_name: "rnt201_first-run"
+wandb_trial_name: "rnt201_first-run-dino"
 
 hyperparams:
   lr:
