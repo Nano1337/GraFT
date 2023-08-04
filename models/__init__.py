@@ -2,7 +2,7 @@ import torch
 
 from models.DeiT_gradual_fusion import DEIT_Gradual_Fusion
 from models.DeiT_gradual_fusion_scalable import DEIT_Gradual_Fusion_Scalable
-
+from models.Dino_gradual_fusion import Dino_Gradual_Fusion
 
 def get_model(cfgs: dict, fabric: any) -> torch.nn.Module:
     """Gets the specified model based on the provided configurations.
@@ -19,6 +19,8 @@ def get_model(cfgs: dict, fabric: any) -> torch.nn.Module:
     """
     if cfgs.model_name == "deit_gradual_fusion":
         model = DEIT_Gradual_Fusion(cfg=cfgs, fabric=fabric)
+    elif cfgs.model_name == "dino_gradual_fusion":
+        model = Dino_Gradual_Fusion(cfg=cfgs, fabric=fabric)
     elif cfgs.model_name == "deit_gradual_fusion_scalable":
         model = DEIT_Gradual_Fusion_Scalable(cfg=cfgs, fabric=fabric)
     else:
