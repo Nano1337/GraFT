@@ -83,10 +83,12 @@ class DEIT_Gradual_Fusion(nn.Module):
         self.bottleneck = nn.BatchNorm1d(self.feat_dim)
         self.bottleneck.bias.requires_grad = False
         self.bottleneck.apply(weights_init_kaiming)
-        process_group = dist.new_group(
-            ranks=list(range(self.fabric.world_size)))
-        self.bottleneck = nn.SyncBatchNorm.convert_sync_batchnorm(
-            self.bottleneck, process_group=process_group)
+
+        if len(self.cfg.gpus) > 1:
+            process_group = dist.new_group(
+                ranks=list(range(self.fabric.world_size)))
+            self.bottleneck = nn.SyncBatchNorm.convert_sync_batchnorm(
+                self.bottleneck, process_group=process_group)
 
         self.decoder = nn.Linear(
             (self.cfg.model_num_fusion_tokens +

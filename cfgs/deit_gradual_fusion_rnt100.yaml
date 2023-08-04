@@ -6,7 +6,7 @@ output_dir: '/data/datasets/research-datasets/output_dir'
 seed: 1234
 new_random: True
 phase: 'train'
-cfg_name: 'deit-prune-MLP'
+cfg_name: 'deit-onegpu-rnt100'
 
 # Dataset parameters
 dataroot: '/data/datasets/research-datasets'
@@ -26,7 +26,7 @@ image_num_for_reid_validate: 25 # Default 25
 num_triplet_samples: 8 # Default 1
 
 # Model parameters 
-model_modalities: ['R', 'N']
+model_modalities: ['R', 'N', 'T']
 non_generalizable_inputs: False
 model_anchor_only_reid: False # false by default
 model_num_cls_tokens: 2
@@ -56,7 +56,7 @@ warmup_steps: 50
 max_lr: 0.01
  
 # Training parameters
-gpus: [0, 1, 2, 3]
+gpus: [2]
 #gpus: [4, 5, 6, 7]
 #gpus: [5,7]
 
@@ -74,9 +74,9 @@ n_trials: 1 # number of trials for optuna
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: "mm-mafia-reid-prune"
-study_name: "deit-prune-MLP"
-wandb_run_name: "deit-prune-MLP"
-wandb_trial_name: "sparsity75-iters10"
+study_name: "deit-onegpu-rnt100"
+wandb_run_name: "deit-onegpu-rnt100"
+wandb_trial_name: "deit-onegpu-rnt100"
 
 hyperparams:
   lr:

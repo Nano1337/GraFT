@@ -281,11 +281,10 @@ class Trainer_RGBN_Triplet(Base_Trainer):
                 
 
             # after all batches are processed, get final results
-            self.fabric.barrier()
-            cmc, mAP = self.metric.compute()cmc, mAP = self.metric.compute()
+            cmc, mAP = self.metric.compute()
 
             if self.fabric.is_global_zero:
-                
+
                 # log to wandb
                 if self.cfgs.use_wandb:
                     wandb.log({
