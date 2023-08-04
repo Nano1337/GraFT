@@ -174,7 +174,6 @@ class RGBNT_MultimodalDatasetFolder(VisionDataset):
 
             # select a positive instance from the same class, and a negative instance from a diff class
             all_items = np.asarray(list(samples.values())[0])
-            print(all_items)
 
             new_samples = {modality: [] for modality in self.modality_list}
             for i, item in enumerate(all_items):
@@ -204,7 +203,6 @@ class RGBNT_MultimodalDatasetFolder(VisionDataset):
                     class_to_idx, self.cfgs, extensions, is_valid_file, train=False, root_dir=self.root)
                 for modality in self.modality_list
             }
-            print(list(samples.values())[0])
 
         for modality, modality_samples in samples.items():
             if len(modality_samples) == 0:
@@ -247,6 +245,7 @@ class RGBNT_MultimodalDatasetFolder(VisionDataset):
         Returns:
             Tuple containing sample and target.
         """
+
         if index in self.cache:
             sample_dict, target = deepcopy(self.cache[index])
         else:
@@ -280,7 +279,6 @@ class RGBNT_MultimodalDatasetFolder(VisionDataset):
                 batch_target = torch.nn.functional.one_hot(
                     torch.tensor(batch_target),
                     num_classes=len(self.classes)).float()
-
         return batch_inputs, batch_target
 
     def __len__(self) -> int:

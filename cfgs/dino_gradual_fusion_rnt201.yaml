@@ -21,7 +21,7 @@ train_ratio: 0.8 # use 80% of the data for training and 20% for validation
 one_hot: True
 image_num_for_reid_train: 8 # Default 1 -- DO NOT CHANGE THIS ONE AND num_triplet_samples AT SAME TIME THEY DO SAME THING
 image_num_for_reid_validate: 25 # Default 25
-num_triplet_samples: 8 # Default 1
+num_triplet_samples: 1  # Default 1
 
 # Model parameters 
 model_modalities: ['R', 'N', 'T']
@@ -35,7 +35,7 @@ model_decoder_output_class_num: 141 # change this when changing datasets
 model_fusion_combos: 'ffd'
 data_token_step: 0
 interpolate_pos_encoding: True
-pretrained_model: "dino-vit"
+pretrained_model: "dino-small"
 
 # Loss parameters
 loss_fn: "center+ce+triplet_euclidean_soft_margin" 

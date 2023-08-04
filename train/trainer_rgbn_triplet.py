@@ -201,7 +201,6 @@ class Trainer_RGBN_Triplet(Base_Trainer):
                         f"Data: {(iter_start_time - iter_data_time):.4f}\t")
 
             iter_data_time = time.time()
-            print(i, "Iterations completed")
 
     def train(self) -> float:
         """Trains the model for the specified number of epochs.
@@ -262,14 +261,11 @@ class Trainer_RGBN_Triplet(Base_Trainer):
         self.model.eval()
         self.metric.reset()
 
-        num_iter = 0
         with torch.no_grad():
             
             for batch_input, batch_target in self.val_loader:
-                num_iter += 1
 
                 pid, camid = parse_string_list(batch_target)
-                print(len(pid), "num iter", num_iter)
                 inputs = {}
                 for m, modality in enumerate(self.cfgs.model_modalities):
                     inputs[modality] = []
@@ -285,9 +281,11 @@ class Trainer_RGBN_Triplet(Base_Trainer):
                 
 
             # after all batches are processed, get final results
-            cmc, mAP = self.metric.compute()
+            self.fabric.barrier()
+            cmc, mAP = self.metric.compute()cmc, mAP = self.metric.compute()
 
             if self.fabric.is_global_zero:
+                
                 # log to wandb
                 if self.cfgs.use_wandb:
                     wandb.log({
