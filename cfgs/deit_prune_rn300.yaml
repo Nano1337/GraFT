@@ -1,10 +1,10 @@
 # TODO: Check which parameters here are actually used and prune out all the ones that aren't
 
 # General parameters
-use_optuna: True
+use_optuna: False
 output_dir: '/data/datasets/research-datasets/output_dir'
 phase: 'train'
-cfg_name: 'deit-scaling-RN300-fixed'
+cfg_name: 'deit-prune-RN300'
 
 # Dataset parameters
 dataroot: '/data/datasets/research-datasets'
@@ -47,7 +47,7 @@ alpha: 1
 
 # Optimizer parameters
 optimizer: 'adamw'
-lr: 3e-6
+lr: 3e-4
 weight_decay: 1e-3
 beta1: 0.83
 beta2: 0.97
@@ -72,9 +72,9 @@ n_trials: 2 # number of trials for optuna
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: "mm-mafia-reid-hpo"
-study_name: "deit-scaling-RN300-fixed"
-wandb_run_name: "deit-scaling-RN300-fixed"
-wandb_trial_name: "ffd_three-loss-euclidean_DEiT-B-224-distilled-RN300-4layers"
+study_name: "deit-prune-RN300"
+wandb_run_name: "deit-prune-RN300"
+wandb_trial_name: "ffd_three-loss-euclidean_DEiT-B-224-distilled-RN300-4layers-Unfreeze-3-lr3e4"
 
 hyperparams:
   lr:

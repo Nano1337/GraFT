@@ -29,9 +29,9 @@ def weights_init_classifier(m: nn.Module) -> None:
             nn.init.constant_(m.bias, 0.0)
 
 
-class Dino_Gradual_Fusion(nn.Module):
+class DINO_Gradual_Fusion(nn.Module):
     def __init__(self, cfg: Dict[str, Union[int, str]], fabric: any) -> None:
-        super(Dino_Gradual_Fusion, self).__init__()
+        super(DINO_Gradual_Fusion, self).__init__()
         self.cfg = cfg
         self.fabric = fabric
         hidden_size = self.cfg.vit_embed_dim
@@ -121,7 +121,7 @@ class Dino_Gradual_Fusion(nn.Module):
         anchor_output = []
         cls_anchor = {}
         for modality in self.cfg.model_modalities:
-            z_anchors[modality] = self.transformer(input_anchors[modality])
+            z_anchors[modality] = self.transformer(input_anchors[modality], interpolate_pos_encoding=self.cfg.interpolate_pos_encoding)
             z_anchors[modality] = z_anchors[modality].last_hidden_state.permute(1, 0, 2)
             cls_anchor[modality] = self.cls_anchor[modality].repeat(1, z_anchors[modality].shape[1], 1)
             if self.cfg.model_fusion_combos[0] == "f":
@@ -173,7 +173,7 @@ class Dino_Gradual_Fusion(nn.Module):
             pos_output = []
             cls_pos = {}
             for modality in self.cfg.model_modalities:
-                z_pos[modality] = self.transformer(input_positives[modality])
+                z_pos[modality] = self.transformer(input_positives[modality], interpolate_pos_encoding=self.cfg.interpolate_pos_encoding)
                 z_pos[modality] = z_pos[modality].last_hidden_state.permute(
                     1, 0, 2)
                 cls_pos[modality] = self.cls_anchor[modality].repeat(
@@ -219,7 +219,7 @@ class Dino_Gradual_Fusion(nn.Module):
             neg_output = []
             cls_neg = {}
             for modality in self.cfg.model_modalities:
-                z_neg[modality] = self.transformer(input_negatives[modality])
+                z_neg[modality] = self.transformer(input_negatives[modality], interpolate_pos_encoding=self.cfg.interpolate_pos_encoding)
                 z_neg[modality] = z_neg[modality].last_hidden_state.permute(
                     1, 0, 2)
                 cls_neg[modality] = self.cls_anchor[modality].repeat(

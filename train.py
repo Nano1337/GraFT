@@ -25,10 +25,7 @@ torch.set_float32_matmul_precision("medium")
 def main(cfgs: dict): 
     # Set random seed for reproduceability
     seed_everything(cfgs.seed)
-    if cfgs.use_mixed_precision: 
-        fabric = Fabric(accelerator="auto", devices = cfgs.gpus, precision="bf16-mixed")
-    else: 
-        fabric = Fabric(accelerator="auto", devices = cfgs.gpus)
+    fabric = Fabric(accelerator="auto", devices = cfgs.gpus)
     fabric.launch()
 
     if cfgs.use_wandb and fabric.is_global_zero:
@@ -62,6 +59,12 @@ def main(cfgs: dict):
     # Get the model
     model = models.get_model(cfgs=cfgs, fabric=fabric)
 
+    """
+    for param in model.transformer.parameters():
+        param.requires_grad = True
+    model.transformer.pooler.dense.bias.requires_grad = False
+    model.transformer.pooler.dense.weight.requires_grad = False
+    """
 
     if cfgs.use_wandb and fabric.is_global_zero:
         # WandB – Watch the model

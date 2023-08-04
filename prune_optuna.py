@@ -15,6 +15,7 @@ import train
 import optimizers
 import loss
 from utils.opt import get_cfgs
+import torch.nn.utils.prune as prune
 
 torch.set_float32_matmul_precision("medium")
 os.environ["WANDB_START_METHOD"] = "thread"
@@ -96,12 +97,6 @@ def main(cfgs: dict, fabric: Fabric, trial: Trial = None) -> float:
         print("Training set size:", len(train_dataset))
         print("Validation set size:", len(val_dataset))
 
-    num_batches = 0
-    for batch_input, batch_target in val_loader:
-        num_batches += 1
-    print("Number of batches for validation:", num_batches)
-    print("Dataloader size total:", num_batches * cfgs.batch_size)
-
     config_name = os.path.splitext(os.path.basename(cfgs.cfg_name))[0]
     unique_dir_name = time.strftime("%Y%m%d-%H%M%S-") + config_name
     output_dir = Path(cfgs.output_dir, unique_dir_name)
@@ -113,6 +108,20 @@ def main(cfgs: dict, fabric: Fabric, trial: Trial = None) -> float:
     criterion = loss.get_loss(cfgs, fabric)
     optimizer = optimizers.get_optim(cfgs, model)
 
+    parameters_to_prune = []
+    for layer in model.transformer.encoder.layer:
+        parameters_to_prune.append((layer.intermediate.dense, 'weight'))
+        parameters_to_prune.append((layer.output.dense, 'weight'))
+        parameters_to_prune.append((layer.attention.attention.query, 'weight'))
+        parameters_to_prune.append((layer.attention.attention.key, 'weight'))
+        parameters_to_prune.append((layer.attention.attention.value, 'weight'))
+        parameters_to_prune.append((layer.attention.output.dense, 'weight'))
+    
+    for param in model.transformer.parameters():
+        param.requires_grad = True
+    model.transformer.pooler.dense.bias.requires_grad = False
+    model.transformer.pooler.dense.weight.requires_grad = False
+
     trainer = train.get_trainer(cfgs, fabric, model, train_loader, val_loader,
                                 optimizer, criterion, unique_dir_name, trial)
 
@@ -120,6 +129,9 @@ def main(cfgs: dict, fabric: Fabric, trial: Trial = None) -> float:
         trainer.print_networks()
 
     if cfgs.phase == "train":
+
+        prune.global_unstructured(parameters_to_prune, pruning_method=prune.L1Unstructured,amount=.2) 
+
         highest_val = trainer.train()
     elif cfgs.phase == "val":
         print(trainer.validate())
