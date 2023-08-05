@@ -1,6 +1,7 @@
 import os
 import torch.nn as nn
 import torch.utils.data
+import torch.distributed as dist
 from lightning.fabric import Fabric, seed_everything
 
 import models
@@ -12,10 +13,11 @@ from utils.opt import get_cfgs
 
 torch.set_float32_matmul_precision("medium")
 
+
 def main(cfgs: dict): 
     # Set random seed for reproduceability
     seed_everything(cfgs.seed)
-    fabric = Fabric(accelerator="auto", devices = cfgs.gpus)
+    fabric = Fabric(accelerator="auto", devices=cfgs.gpus)
     fabric.launch()
 
     # create the dataset and dataloader 
@@ -29,14 +31,19 @@ def main(cfgs: dict):
     if fabric.is_global_zero: 
         print("Validation set size:", dataset_size)
 
+    process_group = None
+    if len(cfgs.gpus) > 1:
+        process_group = dist.new_group(
+            ranks=list(range(fabric.world_size)))
     
     # Get the model
-    model = models.get_model(cfgs=cfgs, fabric=fabric)
+    model = models.get_model(cfgs=cfgs, fabric=fabric, process_group=process_group)
 
     if cfgs.trainer_name != "validation_only":
         print("Warning: trainer_name is not validation_only. This script is only meant for validation.")
 
-    trainer = train.get_trainer(cfgs = cfgs, fabric = fabric, model = model, val_loader = val_loader)
+    trainer = train.get_trainer(cfgs=cfgs, fabric=fabric, model=model,
+                                val_loader=val_loader, process_group=process_group)
 
     # print out model summary
     if fabric.is_global_zero: 

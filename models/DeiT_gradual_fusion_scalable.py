@@ -3,7 +3,7 @@ import torch.nn as nn
 from transformers import DeiTModel
 import torch.distributed as dist
 from torch.nn.modules.container import ModuleDict, ParameterDict
-from typing import Dict, Union
+from typing import Dict, Union, Optional
 
 
 def weights_init_kaiming(m: nn.Module) -> None:
@@ -30,10 +30,14 @@ def weights_init_classifier(m: nn.Module) -> None:
 
 
 class DEIT_Gradual_Fusion_Scalable(nn.Module):
-    def __init__(self, cfg: Dict[str, Union[int, str]], fabric: any) -> None:
+    def __init__(self, 
+                 cfg: Dict[str, Union[int, str]], 
+                 fabric: any, 
+                 process_group: Optional[dist.ProcessGroup] = None) -> None:
         super(DEIT_Gradual_Fusion_Scalable, self).__init__()
         self.cfg = cfg
         self.fabric = fabric
+        self.process_group = process_group
         hidden_size = self.cfg.vit_embed_dim
         self.feat_dim = self.cfg.vit_embed_dim * (
             len(self.cfg.model_modalities) *
@@ -89,10 +93,10 @@ class DEIT_Gradual_Fusion_Scalable(nn.Module):
         self.bottleneck = nn.BatchNorm1d(self.feat_dim)
         self.bottleneck.bias.requires_grad = False
         self.bottleneck.apply(weights_init_kaiming)
-        process_group = dist.new_group(
-            ranks=list(range(self.fabric.world_size)))
-        self.bottleneck = nn.SyncBatchNorm.convert_sync_batchnorm(
-            self.bottleneck, process_group=process_group)
+
+        if len(self.cfg.gpus) > 1:
+            self.bottleneck = nn.SyncBatchNorm.convert_sync_batchnorm(
+                self.bottleneck, process_group=process_group)
 
         self.decoder = nn.Linear(
             (self.cfg.model_num_fusion_tokens +

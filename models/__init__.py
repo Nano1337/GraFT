@@ -1,11 +1,14 @@
+from typing import Optional, Any
+
 import torch
+import torch.distributed as dist
 
 from models.DeiT_gradual_fusion import DEIT_Gradual_Fusion
 from models.DeiT_gradual_fusion_scalable import DEIT_Gradual_Fusion_Scalable
 from models.DINO_gradual_fusion import DINO_Gradual_Fusion
 
 
-def get_model(cfgs: dict, fabric: any) -> torch.nn.Module:
+def get_model(cfgs: dict, fabric: any, process_group: Optional[dist.ProcessGroup] = None) -> torch.nn.Module:
     """Gets the specified model based on the provided configurations.
 
     Args:
@@ -19,13 +22,11 @@ def get_model(cfgs: dict, fabric: any) -> torch.nn.Module:
         NotImplementedError: If the model specified in the configurations is not found.
     """
     if cfgs.model_name == "deit_gradual_fusion":
-        model = DEIT_Gradual_Fusion(cfg=cfgs, fabric=fabric)
+        model = DEIT_Gradual_Fusion(cfg=cfgs, fabric=fabric, process_group=process_group)
     elif cfgs.model_name == "dino_gradual_fusion":
-        model = DINO_Gradual_Fusion(cfg=cfgs, fabric=fabric)
+        model = DINO_Gradual_Fusion(cfg=cfgs, fabric=fabric, process_group=process_group)
     elif cfgs.model_name == "deit_gradual_fusion_scalable":
-        model = DEIT_Gradual_Fusion_Scalable(cfg=cfgs, fabric=fabric)
-    elif cfgs.model_name == "dino_gradual_fusion":
-        model = DINO_Gradual_Fusion(cfg=cfgs, fabric=fabric)
+        model = DEIT_Gradual_Fusion_Scalable(cfg=cfgs, fabric=fabric, process_group=process_group)
     else:
         model = None
 

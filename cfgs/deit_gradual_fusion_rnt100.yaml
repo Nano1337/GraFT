@@ -3,10 +3,10 @@
 # General parameters
 use_optuna: False
 output_dir: '/data/datasets/research-datasets/output_dir'
-seed: 1234
-new_random: True
+seed: 1746756492
+new_random: False
 phase: 'train'
-cfg_name: 'deit-onegpu-rnt100'
+cfg_name: 'deit-rnt100-correctval'
 
 # Dataset parameters
 dataroot: '/data/datasets/research-datasets'
@@ -56,12 +56,12 @@ warmup_steps: 50
 max_lr: 0.01
  
 # Training parameters
-gpus: [2]
+gpus: [0, 1, 2, 3]
 #gpus: [4, 5, 6, 7]
 #gpus: [5,7]
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
-ckpt_full_path: '/data/datasets/research-datasets/ckpt_dir/20230730-202650-ffd_three-loss-euclidean_DEiT-B-224-distilled-inference/best.pth' #'/data/datasets/research-datasets/ckpt_dir/20230727-112754-dino_middle_fusion_noconv_exp2_flex_size/best.pth
+ckpt_full_path: null # '/data/datasets/research-datasets/ckpt_dir/20230730-202650-ffd_three-loss-euclidean_DEiT-B-224-distilled-inference/best.pth' #'/data/datasets/research-datasets/ckpt_dir/20230727-112754-dino_middle_fusion_noconv_exp2_flex_size/best.pth
 batch_size: 20
 num_epochs: 40
 print_freq: 50
@@ -73,10 +73,10 @@ n_trials: 1 # number of trials for optuna
 
 # Weights and Biases Logging
 use_wandb: True
-wandb_project: "mm-mafia-reid-prune"
-study_name: "deit-onegpu-rnt100"
-wandb_run_name: "deit-onegpu-rnt100"
-wandb_trial_name: "deit-onegpu-rnt100"
+wandb_project: "mm-mafia-reid-hpo"
+study_name: "deit-rnt100-correctval"
+wandb_run_name: "deit-rnt100-correctval"
+wandb_trial_name: "first-trial"
 
 hyperparams:
   lr:
