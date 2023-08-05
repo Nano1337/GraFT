@@ -48,7 +48,7 @@ class Trainer_Validation_Only(Base_Trainer):
     and loading models.
     """
 
-    def __init__(self, cfgs, fabric, model, val_loader):
+    def __init__(self, cfgs, fabric, model, val_loader, process_group=None):
         """Initializes the trainer with provided configurations, model,
             data loaders, optimizer, and loss function.
 
@@ -72,6 +72,7 @@ class Trainer_Validation_Only(Base_Trainer):
                          model=model,
                          val_loader=val_loader)
         self.model = self.fabric.setup(self.model)
+        self.process_group = process_group
 
         # load checkpoint if exists
         if not os.path.isdir(cfgs.ckpt_dir):
@@ -85,7 +86,8 @@ class Trainer_Validation_Only(Base_Trainer):
         query_path = os.path.join(str(cfgs.dataroot), str(
             cfgs.dataset)) + "/rgbir/query"
         self.num_queries = len(os.listdir(query_path))
-        self.metric = R1_mAP(self.fabric, self.num_queries, self.cfgs.max_rank)
+        self.metric = R1_mAP(self.fabric, self.cfgs, self.num_queries, self.cfgs.max_rank,
+                             process_group=self.process_group)
 
     def validate(self):
         """

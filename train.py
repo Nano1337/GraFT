@@ -11,21 +11,22 @@ from lightning.fabric import Fabric, seed_everything
 from PIL import Image
 from torchvision import transforms
 
+import torch.distributed as dist
 
 import models
 import data_utils
 import train 
 import optimizers
 import loss
-import numpy as np
 from utils.opt import get_cfgs
 
 torch.set_float32_matmul_precision("medium")
 
+
 def main(cfgs: dict): 
     # Set random seed for reproduceability
     seed_everything(cfgs.seed)
-    fabric = Fabric(accelerator="auto", devices = cfgs.gpus)
+    fabric = Fabric(accelerator="auto", devices=cfgs.gpus)
     fabric.launch()
 
     if cfgs.use_wandb and fabric.is_global_zero:
@@ -34,7 +35,7 @@ def main(cfgs: dict):
         wandb.run.name = cfgs.wandb_run_name
         wandb.run.save()
 
-    # create the dataset and dataloader 
+    # create the dataset and dataloader
     train_dataset, val_dataset, train_loader, val_loader = data_utils.get_dataset_and_dataloader(cfgs)
     
     # Shape: batch_size, modalities, triplet, channels, height, width
@@ -56,8 +57,13 @@ def main(cfgs: dict):
 
     print("Output directory:", output_dir)
 
+    process_group = None
+    if len(cfgs.gpus) > 1:
+        process_group = dist.new_group(
+            ranks=list(range(fabric.world_size)))
+
     # Get the model
-    model = models.get_model(cfgs=cfgs, fabric=fabric)
+    model = models.get_model(cfgs=cfgs, fabric=fabric, process_group=process_group)
 
     """
     for param in model.transformer.parameters():
@@ -74,22 +80,24 @@ def main(cfgs: dict):
 
     optimizer = optimizers.get_optim(cfgs, model)
 
-    trainer = train.get_trainer(cfgs, fabric, model, train_loader, val_loader, optimizer, criterion, unique_dir_name)
+    trainer = train.get_trainer(cfgs, fabric, model, train_loader, val_loader, optimizer,
+                                criterion, unique_dir_name, process_group=process_group)
 
     # print out model summary
-    if fabric.is_global_zero: 
+    if fabric.is_global_zero:
         trainer.print_networks()
 
     # begin training
     if cfgs.phase == "train":
         trainer.train()
     elif cfgs.phase == "val":
-        print(trainer.validate())
+        output = trainer.validate()
+        if fabric.is_global_zero:
+            print(output)
 
     # # if cfgs.show_ir_samples:
     # #     trainer.show_samples()
-    
-    
+
 
 if __name__ == "__main__":
     cfgs = get_cfgs()

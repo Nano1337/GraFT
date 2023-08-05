@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
-from transformers import Dinov2Model,ViTModel
+import torch.distributed as dist
+from transformers import Dinov2Model, ViTModel
 import torch.distributed as dist
 from torch.nn.modules.container import ModuleDict, ParameterDict
-from typing import Dict, Union
+from typing import Dict, Union, Optional
 
 
 def weights_init_kaiming(m: nn.Module) -> None:
@@ -30,10 +31,12 @@ def weights_init_classifier(m: nn.Module) -> None:
 
 
 class DINO_Gradual_Fusion(nn.Module):
-    def __init__(self, cfg: Dict[str, Union[int, str]], fabric: any) -> None:
+    def __init__(self, cfg: Dict[str, Union[int, str]], 
+                 fabric: any, process_group: Optional[dist.ProcessGroup] = None) -> None:
         super(DINO_Gradual_Fusion, self).__init__()
         self.cfg = cfg
         self.fabric = fabric
+        self.process_group = process_group
         hidden_size = self.cfg.vit_embed_dim
         self.feat_dim = self.cfg.vit_embed_dim * (
             len(self.cfg.model_modalities) *
@@ -69,10 +72,10 @@ class DINO_Gradual_Fusion(nn.Module):
                 'facebook/dino-vitb16')
         elif self.cfg.pretrained_model == "dinov2-small":
             self.transformer = Dinov2Model.from_pretrained(
-                'facebook/dino-vitb16')
+                'facebook/dinov2-small')
         elif self.cfg.pretrained_model == "dinov2-base":
             self.transformer = Dinov2Model.from_pretrained(
-                'facebook/dino-vitb16')
+                'facebook/dinov2-base')
         else:
             raise ValueError("Invalid pretrained model")
 
@@ -86,10 +89,10 @@ class DINO_Gradual_Fusion(nn.Module):
         self.bottleneck = nn.BatchNorm1d(self.feat_dim)
         self.bottleneck.bias.requires_grad = False
         self.bottleneck.apply(weights_init_kaiming)
-        process_group = dist.new_group(
-            ranks=list(range(self.fabric.world_size)))
-        self.bottleneck = nn.SyncBatchNorm.convert_sync_batchnorm(
-            self.bottleneck, process_group=process_group)
+
+        if len(self.cfg.gpus) > 1:
+            self.bottleneck = nn.SyncBatchNorm.convert_sync_batchnorm(
+                self.bottleneck, process_group=self.process_group)
 
         self.decoder = nn.Linear(
             (self.cfg.model_num_fusion_tokens +
@@ -121,7 +124,11 @@ class DINO_Gradual_Fusion(nn.Module):
         anchor_output = []
         cls_anchor = {}
         for modality in self.cfg.model_modalities:
-            z_anchors[modality] = self.transformer(input_anchors[modality], interpolate_pos_encoding=self.cfg.interpolate_pos_encoding)
+            if "dinov2" in self.cfg.pretrained_model:
+                z_anchors[modality] = self.transformer(input_anchors[modality])
+            else: 
+                z_anchors[modality] = self.transformer(input_anchors[modality], 
+                                                       interpolate_pos_encoding=self.cfg.interpolate_pos_encoding)
             z_anchors[modality] = z_anchors[modality].last_hidden_state.permute(1, 0, 2)
             cls_anchor[modality] = self.cls_anchor[modality].repeat(1, z_anchors[modality].shape[1], 1)
             if self.cfg.model_fusion_combos[0] == "f":
@@ -173,7 +180,11 @@ class DINO_Gradual_Fusion(nn.Module):
             pos_output = []
             cls_pos = {}
             for modality in self.cfg.model_modalities:
-                z_pos[modality] = self.transformer(input_positives[modality], interpolate_pos_encoding=self.cfg.interpolate_pos_encoding)
+                if "dinov2" in self.cfg.pretrained_model:
+                    z_pos[modality] = self.transformer(input_positives[modality])
+                else: 
+                    z_pos[modality] = self.transformer(input_positives[modality], 
+                                                        interpolate_pos_encoding=self.cfg.interpolate_pos_encoding)
                 z_pos[modality] = z_pos[modality].last_hidden_state.permute(
                     1, 0, 2)
                 cls_pos[modality] = self.cls_anchor[modality].repeat(
@@ -219,7 +230,11 @@ class DINO_Gradual_Fusion(nn.Module):
             neg_output = []
             cls_neg = {}
             for modality in self.cfg.model_modalities:
-                z_neg[modality] = self.transformer(input_negatives[modality], interpolate_pos_encoding=self.cfg.interpolate_pos_encoding)
+                if "dinov2" in self.cfg.pretrained_model:
+                    z_neg[modality] = self.transformer(input_negatives[modality])
+                else: 
+                    z_neg[modality] = self.transformer(input_negatives[modality], 
+                                                        interpolate_pos_encoding=self.cfg.interpolate_pos_encoding)
                 z_neg[modality] = z_neg[modality].last_hidden_state.permute(
                     1, 0, 2)
                 cls_neg[modality] = self.cls_anchor[modality].repeat(

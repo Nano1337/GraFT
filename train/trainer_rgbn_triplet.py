@@ -14,6 +14,8 @@ import lr_schedulers
 from train.base_trainer import Base_Trainer
 from metrics.R1_mAP import R1_mAP
 
+import torch.distributed as dist
+
 
 def parse_string_list(string_list: List[str]) -> Tuple[List[int], List[int]]:
     """Parses a list of string identifiers to extract person IDs and camera IDs
@@ -35,7 +37,7 @@ def parse_string_list(string_list: List[str]) -> Tuple[List[int], List[int]]:
         if len(parts) >= 3:
             try:
                 id_num = int(parts[0])
-                camera_id = int(parts[1][1:]) #* int(parts[2]) # ONLY USE PARTS[2] FOR RGBNT201!!!
+                camera_id = int(parts[1][1:])  #* int(parts[2]) # ONLY USE PARTS[2] FOR RGBNT201!!!
                 ids.append(id_num)
                 camera_ids.append(camera_id)
             except ValueError:
@@ -63,7 +65,8 @@ class Trainer_RGBN_Triplet(Base_Trainer):
                  optimizer: Type[optim.Optimizer],
                  criterion: Type[Module],
                  unique_dir_name: str,
-                 trial: Optional[Any] = None) -> None:
+                 trial: Optional[Any] = None,
+                 process_group: Optional[dist.ProcessGroup] = None) -> None:
         """Initializes the trainer with provided configurations, model,
             data loaders, optimizer, and loss function.
 
@@ -104,11 +107,15 @@ class Trainer_RGBN_Triplet(Base_Trainer):
         save_dir = Path(cfgs.ckpt_dir, unique_dir_name)
         save_dir.mkdir(parents=True, exist_ok=True)
 
+        # initialize process group
+        self.process_group = process_group
+
         # initialize validation metrics
         query_path = os.path.join(str(cfgs.dataroot), str(
             cfgs.dataset)) + "/rgbir/query"
         self.num_queries = len(os.listdir(query_path))
-        self.metric = R1_mAP(self.fabric, self.num_queries, self.cfgs.max_rank)
+        self.metric = R1_mAP(self.fabric, self.cfgs, self.num_queries, self.cfgs.max_rank,
+                             process_group=self.process_group)
 
         # initialize optuna trial if exists
         self.trial = trial if cfgs.use_optuna else None
@@ -278,14 +285,12 @@ class Trainer_RGBN_Triplet(Base_Trainer):
 
                 self.metric.update(embeddings["z_reparamed_anchor"], pid,
                                    camid)
-                
-
-            # after all batches are processed, get final results
-            self.fabric.barrier()
-            cmc, mAP = self.metric.compute()cmc, mAP = self.metric.compute()
 
             if self.fabric.is_global_zero:
                 
+                # after all batches are processed, get final results
+                cmc, mAP = self.metric.compute()
+
                 # log to wandb
                 if self.cfgs.use_wandb:
                     wandb.log({
@@ -313,7 +318,10 @@ class Trainer_RGBN_Triplet(Base_Trainer):
                         wandb.finish(quiet=True)
                         raise optuna.exceptions.TrialPruned()
 
-        return mAP
+                return mAP
+            
+        return 0.0  # FIXME: this may cause errors when using optuna pruning trials?
+
 
     def save_networks(self, save_dir: str, save_name: str, epoch: int) -> None:
         """Saves the model state.

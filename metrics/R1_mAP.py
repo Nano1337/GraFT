@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -7,6 +7,7 @@ from sklearn.manifold import TSNE
 import plotly
 import plotly.express as px
 import torch
+import torch.distributed as dist
 
 
 def eval_func(distmat: np.array,
@@ -85,14 +86,31 @@ class R1_mAP:
 
     def __init__(self,
                  fabric: Any,
+                 cfgs: dict,
                  num_query: int,
                  max_rank: int = 50,
-                 feat_norm: str = 'yes'):
+                 feat_norm: str = 'yes',
+                 process_group: Optional[dist.ProcessGroup] = None):
         self.fabric = fabric
+        self.cfgs = cfgs
         self.num_query = num_query
         self.max_rank = max_rank
         self.feat_norm = feat_norm
+        self.process_group = process_group
         self.reset()
+
+    def gather_tensors(self, tensor):
+        gathered = [torch.zeros_like(tensor) for _ in range(self.fabric.world_size)]
+        dist.all_gather(gathered, tensor, group=self.process_group)
+        gathered = torch.cat(gathered, dim=0)
+        return gathered
+
+    def gather_lists(self, data):
+        data = torch.tensor(data).to(self.fabric.device)
+        gathered = [torch.zeros_like(data) for _ in range(self.fabric.world_size)]
+        dist.all_gather(gathered, data, group=self.process_group)
+        gathered = torch.cat(gathered, dim=0).tolist()
+        return gathered
 
     def reset(self):
         """Resets the features, person identifiers, and camera identifiers."""
@@ -108,9 +126,15 @@ class R1_mAP:
             pid: New person identifiers.
             camid: New camera identifiers.
         """
-        self.feats = torch.cat([self.feats, feat], dim=0)
-        self.pids.extend(pid)
-        self.camids.extend(camid)
+        if len(self.cfgs.gpus) > 1: 
+            feat = self.gather_tensors(feat)
+            pid = self.gather_lists(pid)
+            camid = self.gather_lists(camid)
+
+        if self.fabric.is_global_zero:
+            self.feats = torch.cat([self.feats, feat], dim=0)
+            self.pids.extend(pid)
+            self.camids.extend(camid)
 
     def compute_umap_plotly(self,
                             save_path: str = "./visualization/",
@@ -209,25 +233,29 @@ class R1_mAP:
 
     def compute(self) -> Tuple[np.array, float]:
         """Computes the CMC and mAP values for the updated features, person identifiers, and camera identifiers.
+            Only compute on global rank zero. 
 
         Returns:
             cmc: The CMC for each query.
             mAP: The mean Average Precision.
         """
-        if self.feat_norm == 'yes':
-            feats = torch.nn.functional.normalize(self.feats, dim=1, p=2)
-        qf = feats[:self.num_query]
-        q_pids = np.asarray(self.pids[:self.num_query])
-        q_camids = np.asarray(self.camids[:self.num_query])
-        gf = feats[self.num_query:]
-        g_pids = np.asarray(self.pids[self.num_query:])
-        g_camids = np.asarray(self.camids[self.num_query:])
+        if self.fabric.is_global_zero:
+            if self.feat_norm == 'yes':
+                feats = torch.nn.functional.normalize(self.feats, dim=1, p=2)
+            qf = feats[:self.num_query]
+            q_pids = np.asarray(self.pids[:self.num_query])
+            q_camids = np.asarray(self.camids[:self.num_query])
+            gf = feats[self.num_query:]
+            g_pids = np.asarray(self.pids[self.num_query:])
+            g_camids = np.asarray(self.camids[self.num_query:])
 
-        m, n = qf.shape[0], gf.shape[0]
-        distmat = torch.pow(qf, 2).sum(dim=1, keepdim=True).expand(m, n) + \
-            torch.pow(gf, 2).sum(dim=1, keepdim=True).expand(n, m).t()
-        distmat.addmm_(qf, gf.t(), beta=1, alpha=-2)
-        distmat = distmat.cpu().numpy()
+            m, n = qf.shape[0], gf.shape[0]
+            distmat = torch.pow(qf, 2).sum(dim=1, keepdim=True).expand(m, n) + \
+                torch.pow(gf, 2).sum(dim=1, keepdim=True).expand(n, m).t()
+            distmat.addmm_(qf, gf.t(), beta=1, alpha=-2)
+            distmat = distmat.cpu().numpy()
 
-        cmc, mAP = eval_func(distmat, q_pids, g_pids, q_camids, g_camids)
-        return cmc, mAP
+            cmc, mAP = eval_func(distmat, q_pids, g_pids, q_camids, g_camids)
+            return cmc, mAP
+        else:
+            return 0, 0

@@ -2,6 +2,7 @@ from typing import Any, Optional
 
 import torch
 import torch.nn as nn
+import torch.distributed as dist
 import optuna
 
 from train.trainer_rgbn_triplet import Trainer_RGBN_Triplet
@@ -16,7 +17,8 @@ def get_trainer(cfgs: dict,
                 optimizer: torch.optim.Optimizer = None,
                 criterion: nn.Module = None,
                 unique_dir_name: str = None,
-                trial: Optional[optuna.trial.Trial] = None) -> Any:
+                trial: Optional[optuna.trial.Trial] = None,
+                process_group: Optional[dist.ProcessGroup] = None) -> Any:
     """ Gets the trainer class for the current configuration
 
     Args:
@@ -39,9 +41,9 @@ def get_trainer(cfgs: dict,
     if cfgs.trainer_name == "trainer_rgbn_triplet":  # up to date
         trainer = Trainer_RGBN_Triplet(cfgs, fabric, model, train_loader,
                                        val_loader, optimizer, criterion,
-                                       unique_dir_name, trial)
+                                       unique_dir_name, trial, process_group=process_group)
     elif cfgs.trainer_name == "validation_only":
-        trainer = Trainer_Validation_Only(cfgs, fabric, model, val_loader)
+        trainer = Trainer_Validation_Only(cfgs, fabric, model, val_loader, process_group=process_group)
     else:
         trainer = None
 
