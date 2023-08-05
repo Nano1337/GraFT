@@ -46,7 +46,7 @@ def main(cfgs: dict):
                                 val_loader=val_loader, process_group=process_group)
 
     # print out model summary
-    if fabric.is_global_zero: 
+    if fabric.is_global_zero:
         trainer.print_networks()
 
     trainer.validate()
