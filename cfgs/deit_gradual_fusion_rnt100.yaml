@@ -1,12 +1,12 @@
 # TODO: Check which parameters here are actually used and prune out all the ones that aren't
 
 # General parameters
-use_optuna: False
+use_optuna: True
 output_dir: '/data/datasets/research-datasets/output_dir'
 seed: 1746756492
-new_random: False
+new_random: True
 phase: 'train'
-cfg_name: 'deit-rnt100-correctval'
+cfg_name: 'deit-rnt100-widthscale'
 
 # Dataset parameters
 dataroot: '/data/datasets/research-datasets'
@@ -56,8 +56,8 @@ warmup_steps: 50
 max_lr: 0.01
  
 # Training parameters
-gpus: [0, 1, 2, 3]
-#gpus: [4, 5, 6, 7]
+# gpus: [0, 1, 2, 3]
+gpus: [4, 5, 6, 7]
 #gpus: [5,7]
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
@@ -74,9 +74,9 @@ n_trials: 1 # number of trials for optuna
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: "mm-mafia-reid-hpo"
-study_name: "deit-rnt100-correctval"
-wandb_run_name: "deit-rnt100-correctval"
-wandb_trial_name: "first-trial"
+study_name: "deit-rnt100-widthscale"
+wandb_run_name: "deit-rnt100-widthscale"
+wandb_trial_name: "token=20"
 
 hyperparams:
   lr:
@@ -96,12 +96,12 @@ hyperparams:
     max: 0.98
     type: float
   model_num_cls_tokens: 
-    min: 2
-    max: 2
+    min: 20
+    max: 20
     type: int
   model_num_fusion_tokens: 
-    min: 2
-    max: 2
+    min: 20
+    max: 20
     type: int
   model_num_heads: 
     opt: [8]
