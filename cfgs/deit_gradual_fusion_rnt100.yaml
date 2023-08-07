@@ -1,7 +1,7 @@
 # TODO: Check which parameters here are actually used and prune out all the ones that aren't
 
 # General parameters
-use_optuna: True
+use_optuna: False
 output_dir: '/data/datasets/research-datasets/output_dir'
 seed: 1746756492
 new_random: True
@@ -17,8 +17,8 @@ input_size: [224, 224] # 224 normally, 384 for larger deit
 hflip: 0.5 # threshold for random horizontal flip
 resize_min: 0.8 # only if data_augmentation is True
 resize_max: 1.0 # only if data_augmentation is True
-data_augmentation: True
-augment_type: "random_erasure" # Optional: "random_erasure"
+data_augmentation: False
+augment_type: "" # Optional: "random_erasure"
 train_ratio: 0.8 # use 80% of the data for training and 20% for validation
 one_hot: True
 image_num_for_reid_train: 1 # Default 1 -- DO NOT CHANGE THIS ONE AND num_triplet_samples AT SAME TIME THEY DO SAME THING
@@ -76,7 +76,7 @@ use_wandb: True
 wandb_project: "mm-mafia-reid-new-mAP"
 study_name: "deit-rnt100-lrschedule"
 wandb_run_name: "deit-rnt100-lrschedule"
-wandb_trial_name: "all_augs"
+wandb_trial_name: "token=1"
 
 hyperparams:
   lr:
@@ -96,12 +96,12 @@ hyperparams:
     max: 0.98
     type: float
   model_num_cls_tokens: 
-    min: 4
-    max: 4
+    min: 1
+    max: 1
     type: int
   model_num_fusion_tokens: 
-    min: 4
-    max: 4
+    min: 1
+    max: 1
     type: int
   model_num_heads: 
     opt: [8]

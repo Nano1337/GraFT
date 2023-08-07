@@ -8,7 +8,7 @@ class WarmupSqrtDecayWithPercentageCoolDown(_LRScheduler):
     During the warm-up phase, the learning rate linearly increases from 0 to 1 over `warmup_steps` training steps. 
     Following the warm-up, the learning rate decays as max_lr * sqrt(w/step) for the next steps. 
     Finally, in the cool-down phase (which takes the last 10% of the total steps), 
-    the learning rate linearly decays to 0.
+    the learning rate linearly decays to 0 from the value at the end of the square-root decay phase.
 
     Args:
         optimizer: The optimizer for which the learning rate scheduler will be applied.
@@ -25,6 +25,7 @@ class WarmupSqrtDecayWithPercentageCoolDown(_LRScheduler):
         self.warmup_steps = warmup_steps
         self.total_steps = total_steps
         self.cooldown_steps = int(0.1 * total_steps)
+        self.start_cool_down_lr = None  # This will store the LR at the start of the cool-down phase
         super(WarmupSqrtDecayWithPercentageCoolDown, self).__init__(optimizer, last_epoch)
 
     def get_lr(self):
@@ -48,6 +49,12 @@ class WarmupSqrtDecayWithPercentageCoolDown(_LRScheduler):
         
         # Cool-down phase
         else:
+            # At the start of the cool-down, store the current learning rate
+            if self.start_cool_down_lr is None:
+                self.start_cool_down_lr = [base_lr * math.sqrt(self.warmup_steps / (self.total_steps - 
+                                                                                    self.cooldown_steps))
+                                           for base_lr in self.base_lrs]
+
             progress_cool_down = (self.last_epoch - (self.total_steps - self.cooldown_steps)) / self.cooldown_steps
-            linear_decay = 1.0 - progress_cool_down
-            return [base_lr * linear_decay for base_lr in self.base_lrs]
+            linear_decay_values = [start_lr * (1.0 - progress_cool_down) for start_lr in self.start_cool_down_lr]
+            return linear_decay_values

@@ -55,7 +55,7 @@ def objective(trial: Trial, cfgs: dict, fabric: Fabric, rand_seed: int, hyperpar
     else:
         trial_name = "trial_" + str(trial.number)
 
-    if fabric.is_global_zero:
+    if fabric.device == torch.device(cfgs.gpus[0]):
         wandb.init(
             project=cfgs.wandb_project,
             config=cfgs,
@@ -92,7 +92,7 @@ def main(cfgs: dict, fabric: Fabric, trial: Trial = None) -> float:
 
     dataset_size = len(train_dataset) + len(val_dataset)
 
-    if fabric.is_global_zero:
+    if fabric.device == torch.device(cfgs.gpus[0]):
         print("Dataset size total:", dataset_size)
         print("Training set size:", len(train_dataset))
         print("Validation set size:", len(val_dataset))
@@ -122,7 +122,7 @@ def main(cfgs: dict, fabric: Fabric, trial: Trial = None) -> float:
     trainer = train.get_trainer(cfgs, fabric, model, train_loader, val_loader,
                                 optimizer, criterion, unique_dir_name, trial, process_group=process_group)
 
-    if fabric.is_global_zero:
+    if fabric.device == torch.device(cfgs.gpus[0]):
         trainer.print_networks()
 
     if cfgs.phase == "train":

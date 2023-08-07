@@ -96,21 +96,13 @@ class R1_mAP:
         self.num_query = num_query
         self.max_rank = max_rank
         self.feat_norm = feat_norm
-        self.process_group = process_group
+        self.val_device = torch.device(cfgs.gpus[0])
         self.reset()
-
-    def gather_tensors(self, tensor):
-        gathered = [torch.zeros_like(tensor) for _ in range(self.fabric.world_size)]
-        dist.all_gather(gathered, tensor, group=self.process_group)
-        gathered = torch.cat(gathered, dim=0)
-        return gathered
 
     def gather_lists(self, data):
         data = torch.tensor(data).to(self.fabric.device)
-        gathered = [torch.zeros_like(data) for _ in range(self.fabric.world_size)]
-        dist.all_gather(gathered, data, group=self.process_group)
-        gathered = torch.cat(gathered, dim=0).tolist()
-        return gathered
+        gathered = self.fabric.all_gather(data)
+        return gathered.tolist()
 
     def reset(self):
         """Resets the features, person identifiers, and camera identifiers."""
@@ -127,11 +119,14 @@ class R1_mAP:
             camid: New camera identifiers.
         """
         if len(self.cfgs.gpus) > 1: 
-            feat = self.gather_tensors(feat)
+            feat = self.fabric.all_gather(feat)
             pid = self.gather_lists(pid)
             camid = self.gather_lists(camid)
 
-        if self.fabric.is_global_zero:
+        print("feat.shape:", feat.shape)
+        print("self.feats.shape:", self.feats.shape)
+
+        if self.fabric.device == self.val_device:
             self.feats = torch.cat([self.feats, feat], dim=0)
             self.pids.extend(pid)
             self.camids.extend(camid)
@@ -239,7 +234,7 @@ class R1_mAP:
             cmc: The CMC for each query.
             mAP: The mean Average Precision.
         """
-        if self.fabric.is_global_zero:
+        if self.fabric.device == self.val_device:
             if self.feat_norm == 'yes':
                 feats = torch.nn.functional.normalize(self.feats, dim=1, p=2)
             qf = feats[:self.num_query]
