@@ -1,7 +1,7 @@
 # TODO: Check which parameters here are actually used and prune out all the ones that aren't
 
 # General parameters
-use_optuna: False
+use_optuna: True
 output_dir: '/data/datasets/research-datasets/output_dir'
 seed: 1746756492
 new_random: True

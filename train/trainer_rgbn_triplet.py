@@ -65,8 +65,7 @@ class Trainer_RGBN_Triplet(Base_Trainer):
                  optimizer: Type[optim.Optimizer],
                  criterion: Type[Module],
                  unique_dir_name: str,
-                 trial: Optional[Any] = None,
-                 process_group: Optional[dist.ProcessGroup] = None) -> None:
+                 trial: Optional[Any] = None) -> None:
         """Initializes the trainer with provided configurations, model,
             data loaders, optimizer, and loss function.
 
@@ -109,15 +108,11 @@ class Trainer_RGBN_Triplet(Base_Trainer):
         save_dir = Path(cfgs.ckpt_dir, unique_dir_name)
         save_dir.mkdir(parents=True, exist_ok=True)
 
-        # initialize process group
-        self.process_group = process_group
-
         # initialize validation metrics
         query_path = os.path.join(str(cfgs.dataroot), str(
             cfgs.dataset)) + "/rgbir/query"
         self.num_queries = len(os.listdir(query_path))
-        self.metric = R1_mAP(self.fabric, self.cfgs, self.num_queries, self.cfgs.max_rank,
-                             process_group=self.process_group)
+        self.metric = R1_mAP(self.fabric, self.cfgs, self.num_queries, self.cfgs.max_rank)
 
         # initialize optuna trial if exists
         self.trial = trial if cfgs.use_optuna else None

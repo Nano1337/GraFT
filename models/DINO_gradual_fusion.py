@@ -32,11 +32,10 @@ def weights_init_classifier(m: nn.Module) -> None:
 
 class DINO_Gradual_Fusion(nn.Module):
     def __init__(self, cfg: Dict[str, Union[int, str]], 
-                 fabric: any, process_group: Optional[dist.ProcessGroup] = None) -> None:
+                 fabric: any) -> None:
         super(DINO_Gradual_Fusion, self).__init__()
         self.cfg = cfg
         self.fabric = fabric
-        self.process_group = process_group
         hidden_size = self.cfg.vit_embed_dim
         self.feat_dim = self.cfg.vit_embed_dim * (
             len(self.cfg.model_modalities) *
@@ -92,7 +91,7 @@ class DINO_Gradual_Fusion(nn.Module):
 
         if len(self.cfg.gpus) > 1:
             self.bottleneck = nn.SyncBatchNorm.convert_sync_batchnorm(
-                self.bottleneck, process_group=self.process_group)
+                self.bottleneck, process_group=dist.group.WORLD)
 
         self.decoder = nn.Linear(
             (self.cfg.model_num_fusion_tokens +

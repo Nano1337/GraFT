@@ -59,13 +59,8 @@ def main(cfgs: dict):
 
     print("Output directory:", output_dir)
 
-    process_group = None
-    if len(cfgs.gpus) > 1:
-        process_group = dist.new_group(
-            ranks=list(range(fabric.world_size)))
-
     # Get the model
-    model = models.get_model(cfgs=cfgs, fabric=fabric, process_group=process_group)
+    model = models.get_model(cfgs=cfgs, fabric=fabric)
 
     """
     for param in model.transformer.parameters():
@@ -83,7 +78,7 @@ def main(cfgs: dict):
     optimizer = optimizers.get_optim(cfgs, model)
 
     trainer = train.get_trainer(cfgs, fabric, model, train_loader, val_loader, optimizer,
-                                criterion, unique_dir_name, process_group=process_group)
+                                criterion, unique_dir_name)
 
     # print out model summary
     if fabric.device == val_device:

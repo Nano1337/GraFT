@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple, Optional
+from typing import Any, List, Tuple 
 
 import numpy as np
 import pandas as pd
@@ -7,7 +7,6 @@ from sklearn.manifold import TSNE
 import plotly
 import plotly.express as px
 import torch
-import torch.distributed as dist
 
 
 def eval_func(distmat: np.array,
@@ -89,8 +88,7 @@ class R1_mAP:
                  cfgs: dict,
                  num_query: int,
                  max_rank: int = 50,
-                 feat_norm: str = 'yes',
-                 process_group: Optional[dist.ProcessGroup] = None):
+                 feat_norm: str = 'yes'):
         self.fabric = fabric
         self.cfgs = cfgs
         self.num_query = num_query
@@ -101,7 +99,7 @@ class R1_mAP:
 
     def gather_lists(self, data):
         data = torch.tensor(data).to(self.fabric.device)
-        gathered = self.fabric.all_gather(data)
+        gathered = self.fabric.all_gather(data).view(-1)
         return gathered.tolist()
 
     def reset(self):
@@ -119,12 +117,9 @@ class R1_mAP:
             camid: New camera identifiers.
         """
         if len(self.cfgs.gpus) > 1: 
-            feat = self.fabric.all_gather(feat)
+            feat = self.fabric.all_gather(feat).reshape(-1, feat.shape[-1])
             pid = self.gather_lists(pid)
             camid = self.gather_lists(camid)
-
-        print("feat.shape:", feat.shape)
-        print("self.feats.shape:", self.feats.shape)
 
         if self.fabric.device == self.val_device:
             self.feats = torch.cat([self.feats, feat], dim=0)
