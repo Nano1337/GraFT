@@ -76,7 +76,7 @@ use_wandb: True
 wandb_project: "mm-mafia-reid-new-mAP"
 study_name: "deit-rnt100-lrschedule"
 wandb_run_name: "deit-rnt100-lrschedule"
-wandb_trial_name: "modality=1-fusion=2"
+wandb_trial_name: "modality=2-fusion=1"
 
 hyperparams:
   lr:
@@ -96,12 +96,12 @@ hyperparams:
     max: 0.98
     type: float
   model_num_cls_tokens: 
-    min: 1
-    max: 1
-    type: int
-  model_num_fusion_tokens: 
     min: 2
     max: 2
+    type: int
+  model_num_fusion_tokens: 
+    min: 1
+    max: 1
     type: int
   model_num_heads: 
     opt: [8]
