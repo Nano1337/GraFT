@@ -111,6 +111,13 @@ def main(cfgs: dict, fabric: Fabric, trial: Trial = None) -> float:
     print("Output directory:", output_dir)
 
     model = models.get_model(cfgs=cfgs, fabric=fabric)
+
+    if cfgs.unfreeze:
+        for param in model.transformer.parameters():
+            param.requires_grad = True
+        model.transformer.pooler.dense.bias.requires_grad = False
+        model.transformer.pooler.dense.weight.requires_grad = False
+
     criterion = loss.get_loss(cfgs, fabric)
     optimizer = optimizers.get_optim(cfgs, model)
 
