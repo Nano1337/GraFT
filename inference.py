@@ -30,20 +30,15 @@ def main(cfgs: dict):
 
     if fabric.is_global_zero: 
         print("Validation set size:", dataset_size)
-
-    process_group = None
-    if len(cfgs.gpus) > 1:
-        process_group = dist.new_group(
-            ranks=list(range(fabric.world_size)))
     
     # Get the model
-    model = models.get_model(cfgs=cfgs, fabric=fabric, process_group=process_group)
+    model = models.get_model(cfgs=cfgs, fabric=fabric)
 
     if cfgs.trainer_name != "validation_only":
         print("Warning: trainer_name is not validation_only. This script is only meant for validation.")
 
     trainer = train.get_trainer(cfgs=cfgs, fabric=fabric, model=model,
-                                val_loader=val_loader, process_group=process_group)
+                                val_loader=val_loader)
 
     # print out model summary
     if fabric.is_global_zero:

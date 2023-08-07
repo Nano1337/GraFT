@@ -65,8 +65,7 @@ class Trainer_RGBN_Triplet(Base_Trainer):
                  optimizer: Type[optim.Optimizer],
                  criterion: Type[Module],
                  unique_dir_name: str,
-                 trial: Optional[Any] = None,
-                 process_group: Optional[dist.ProcessGroup] = None) -> None:
+                 trial: Optional[Any] = None) -> None:
         """Initializes the trainer with provided configurations, model,
             data loaders, optimizer, and loss function.
 
@@ -97,6 +96,8 @@ class Trainer_RGBN_Triplet(Base_Trainer):
         self.unique_dir_name = unique_dir_name
         self.accumulated_loss = []
 
+        self.val_device = torch.device(cfgs.gpus[0])
+
         # load checkpoint if exists
         if not os.path.isdir(cfgs.ckpt_dir):
             raise ValueError("Checkpoint directory does not exist")
@@ -107,15 +108,11 @@ class Trainer_RGBN_Triplet(Base_Trainer):
         save_dir = Path(cfgs.ckpt_dir, unique_dir_name)
         save_dir.mkdir(parents=True, exist_ok=True)
 
-        # initialize process group
-        self.process_group = process_group
-
         # initialize validation metrics
         query_path = os.path.join(str(cfgs.dataroot), str(
             cfgs.dataset)) + "/rgbir/query"
         self.num_queries = len(os.listdir(query_path))
-        self.metric = R1_mAP(self.fabric, self.cfgs, self.num_queries, self.cfgs.max_rank,
-                             process_group=self.process_group)
+        self.metric = R1_mAP(self.fabric, self.cfgs, self.num_queries, self.cfgs.max_rank)
 
         # initialize optuna trial if exists
         self.trial = trial if cfgs.use_optuna else None
@@ -185,7 +182,7 @@ class Trainer_RGBN_Triplet(Base_Trainer):
                 time.time() - iter_start_time
             ) / self.cfgs.batch_size * 0.005 + optimize_time * 0.995
 
-            if self.fabric.is_global_zero:
+            if self.fabric.device == self.val_device:
                 if i % self.cfgs.print_freq == 0:
                     # Calculate training accuracy for this batch
                     batch_accuracy = running_corrects / total_samples
@@ -231,21 +228,21 @@ class Trainer_RGBN_Triplet(Base_Trainer):
             self.train_epoch(epoch, end_epoch, total_iters, epoch_iter,
                              iter_data_time, optimize_time)
 
-            if self.fabric.is_global_zero:
+            if self.fabric.device == self.val_device:
                 print('End of epoch %d / %d \t Time Taken: %d sec' %
                       (epoch, end_epoch, time.time() - epoch_start_time))
 
             epoch_valid_acc = self.validate()  # run validation
 
             # save checkpoint only if global mAP is higher than previous best
-            if self.fabric.is_global_zero and epoch_valid_acc > self.highest_val_acc:
+            if self.fabric.device == self.val_device and epoch_valid_acc > self.highest_val_acc:
                 print("Saving checkpoint at epoch {}".format(epoch))
                 self.save_networks(
                     os.path.join(self.cfgs.ckpt_dir, self.unique_dir_name),
                     'best.pth', epoch)
                 self.highest_val_acc = epoch_valid_acc
 
-        if self.fabric.is_global_zero:
+        if self.fabric.device == self.val_device:
             print("Training completed. Highest validation acc: {}".format(
                 self.highest_val_acc))
             wandb.run.summary["highest_val_acc"] = self.highest_val_acc
@@ -286,7 +283,7 @@ class Trainer_RGBN_Triplet(Base_Trainer):
                 self.metric.update(embeddings["z_reparamed_anchor"], pid,
                                    camid)
 
-            if self.fabric.is_global_zero:
+            if self.fabric.device == self.val_device:
                 
                 # after all batches are processed, get final results
                 cmc, mAP = self.metric.compute()
