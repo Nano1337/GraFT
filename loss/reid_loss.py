@@ -28,6 +28,7 @@ class Combined_Loss(nn.Module):
 
         self.cfgs = cfgs
         self.fabric = fabric
+        self.val_device = torch.device(cfgs.gpus[0])
 
         if "triplet" in cfgs.loss_fn:
             self.triplet = Triplet_Loss(cfgs=cfgs, fabric=fabric)
@@ -81,7 +82,7 @@ class Combined_Loss(nn.Module):
 
         loss *= self.cfgs.alpha
 
-        if self.fabric.is_global_zero:
+        if self.fabric.device == self.val_device:
             if self.cfgs.use_wandb:
                 if "triplet" in self.cfgs.loss_fn:
                     wandb.log({"train/loss_triplet": triplet_loss.item()})
@@ -174,7 +175,7 @@ class Triplet_CE_Loss(nn.Module):
 
         loss = triplet + classification_loss
 
-        if self.fabric.is_global_zero:
+        if self.fabric.device == self.val_device:
             if self.cfgs.use_wandb:
                 wandb.log({"train/loss_triplet": triplet.item(), "train/loss_ce": classification_loss.item()})
             print("triplet:", triplet.item(), "ce-loss:", classification_loss.item())
@@ -370,7 +371,7 @@ class Circle_Loss(nn.Module):
 
         ce_loss = self.cross_entropy(output, lbl)
 
-        if self.fabric.is_global_zero:
+        if self.fabric.device == self.val_device:
             if self.cfgs.use_wandb:
                 wandb.log({"train/loss_circle": circle_loss.item(), "train/loss_ce": ce_loss.item()})
             print("circle-loss:", circle_loss.item(), "ce-loss:", ce_loss.item())
@@ -435,7 +436,7 @@ class ContextualSimilarityLoss(nn.Module):
         loss_pos = loss_pos.mean()
         loss_neg = loss_neg.mean()
 
-        if self.fabric.is_global_zero:
+        if self.fabric.device == self.val_device:
             if self.cfgs.use_wandb:
                 wandb.log({"train/loss_pos": loss_pos.item(), "train/loss_neg": loss_neg.item(),
                            "train/loss_context": loss_pos.item() + loss_neg.item()})

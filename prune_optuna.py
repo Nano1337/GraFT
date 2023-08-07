@@ -105,12 +105,7 @@ def main(cfgs: dict, fabric: Fabric, trial: Trial = None) -> float:
 
     print("Output directory:", output_dir)
 
-    process_group = None
-    if len(cfgs.gpus) > 1:
-        process_group = dist.new_group(
-            ranks=list(range(fabric.world_size)))
-
-    model = models.get_model(cfgs=cfgs, fabric=fabric, process_group=process_group)
+    model = models.get_model(cfgs=cfgs, fabric=fabric)
     criterion = loss.get_loss(cfgs, fabric)
     optimizer = optimizers.get_optim(cfgs, model)
 
@@ -129,7 +124,7 @@ def main(cfgs: dict, fabric: Fabric, trial: Trial = None) -> float:
     model.transformer.pooler.dense.weight.requires_grad = False
 
     trainer = train.get_trainer(cfgs, fabric, model, train_loader, val_loader,
-                                optimizer, criterion, unique_dir_name, trial, process_group=process_group)
+                                optimizer, criterion, unique_dir_name, trial)
 
     if fabric.is_global_zero:
         trainer.print_networks()
