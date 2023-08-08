@@ -34,6 +34,12 @@ def main(cfgs: dict):
     # Get the model
     model = models.get_model(cfgs=cfgs, fabric=fabric)
 
+    if cfgs.unfreeze:
+        for param in model.transformer.parameters():
+            param.requires_grad = True
+        model.transformer.pooler.dense.bias.requires_grad = False
+        model.transformer.pooler.dense.weight.requires_grad = False
+
     if cfgs.trainer_name != "validation_only":
         print("Warning: trainer_name is not validation_only. This script is only meant for validation.")
 

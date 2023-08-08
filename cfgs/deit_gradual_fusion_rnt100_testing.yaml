@@ -1,11 +1,11 @@
 # TODO: Check which parameters here are actually used and prune out all the ones that aren't
 
 # General parameters
-use_optuna: True
+use_optuna: False
 output_dir: '/data/datasets/research-datasets/output_dir'
 seed: 906579864 
 new_random: False
-phase: 'train'
+phase: 'val'
 cfg_name: 'deit-rnt100-multistage'
 
 # Dataset parameters
@@ -29,15 +29,15 @@ num_triplet_samples: 8 # Default 1
 model_modalities: ['R', 'N', 'T']
 non_generalizable_inputs: False
 model_anchor_only_reid: False # false by default
-model_num_cls_tokens: 2
-model_num_fusion_tokens: 2
+model_num_cls_tokens: 1
+model_num_fusion_tokens: 1
 model_num_heads: 8
 vit_embed_dim: 768 # 384 for dino, 768 normally
 model_decoder_output_class_num: 50 # change this when changing datasets
 model_fusion_combos: 'ffd'
 data_token_step: 0
 pretrained_model: "distilled-224"
-unfreeze: False
+unfreeze: True
 
 # Loss parameters
 loss_fn: "ce+triplet_euclidean_soft_margin" 
@@ -48,7 +48,7 @@ alpha: 1
 
 # Optimizer parameters
 optimizer: 'adamw'
-lr: 0.00002
+lr: 0.000005
 weight_decay: 0.001
 beta1: 0.83
 beta2: 0.97
@@ -58,14 +58,14 @@ max_lr: 0.01
 reset_scheduler: False
 
 # Training parameters
-# gpus: [1, 2, 3, 4, 5, 6, 7]
-gpus: [3, 5, 6, 7]
+# gpus: [5]
+gpus: [4]
 # gpus: [5, 6, 7, 4]
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
-ckpt_full_path: null # '/data/datasets/research-datasets/ckpt_dir/20230808-121427-deit-rnt100-multistage/best.pth'
+ckpt_full_path: '/data/datasets/research-datasets/ckpt_dir/20230808-092335-deit-rnt100-multistage/best.pth' #'/data/datasets/research-datasets/ckpt_dir/20230807-183741-deit-rnt100-multistage/best.pth'
 batch_size: 20
-num_epochs: 25
+num_epochs: 20
 print_freq: 50
 model_name: "deit_gradual_fusion"
 trainer_name: "trainer_rgbn_triplet"
@@ -74,11 +74,11 @@ max_rank: 50 # max number of ranks to calculate cmc and mAP
 n_trials: 1 # number of trials for optuna
 
 # Weights and Biases Logging
-use_wandb: True
+use_wandb: False
 wandb_project: "mm-mafia-reid-new-mAP"
 study_name: "deit-rnt100-multistage"
 wandb_run_name: "deit-rnt100-multistage"
-wandb_trial_name: "stage1-token=2"
+wandb_trial_name: "stage1-RN300"
 
 hyperparams:
   lr:
@@ -98,13 +98,20 @@ hyperparams:
     max: 0.98
     type: float
   model_num_cls_tokens: 
-    min: 2
-    max: 2
+    min: 1
+    max: 1
     type: int
   model_num_fusion_tokens: 
-    min: 2
-    max: 2
+    min: 1
+    max: 1
     type: int
   model_num_heads: 
     opt: [8]
     type: categorical
+
+# Visualization configs
+visualize_embeddings: True
+vis_save_path: "./visualizations/"
+vis_dim: 2
+vis_reduction_method: 'tsne'
+

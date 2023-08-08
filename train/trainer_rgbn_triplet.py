@@ -285,6 +285,12 @@ class Trainer_RGBN_Triplet(Base_Trainer):
 
             if self.fabric.device == self.val_device:
                 
+                # if self.cfgs.visualize_embeddings:
+                #     self.metric.compute_umap_plotly(
+                #         save_path=self.cfgs.vis_save_path,
+                #         dims=self.cfgs.vis_dim,
+                #         reduction_method=self.cfgs.vis_reduction_method)
+
                 # after all batches are processed, get final results
                 cmc, mAP = self.metric.compute()
 
@@ -368,6 +374,8 @@ class Trainer_RGBN_Triplet(Base_Trainer):
         try:
             if remainder['lr_scheduler'] is not None:
                 self.lr_scheduler.load_state_dict(remainder['lr_scheduler'])
+            if self.cfgs.reset_scheduler: 
+                self.lr_scheduler.reset(new_lr=self.cfgs.lr)
         except Exception as e:
             print(f"Error loading lr_scheduler: {e}")
 

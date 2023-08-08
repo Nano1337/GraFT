@@ -155,15 +155,6 @@ class Trainer_Validation_Only(Base_Trainer):
                 print('Validation Time: ', round(end_time - start_time, 2),
                       'sec')  # print the time taken for validation
 
-                # log to optuna
-                if self.cfgs.use_optuna:
-                    self.trial.report(mAP, self.epoch)
-                    if self.trial.should_prune():
-                        print("Trial was pruned at epoch {}".format(
-                            self.epoch))
-                        wandb.run.summary["state"] = "pruned"
-                        wandb.finish(quiet=True)
-                        raise optuna.exceptions.TrialPruned()
 
         return mAP
 
