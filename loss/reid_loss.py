@@ -39,6 +39,9 @@ class Combined_Loss(nn.Module):
             self.context = ContextualSimilarityLoss(cfgs=cfgs, fabric=fabric)
         if "2triplet" in cfgs.loss_fn:
             self.triplet2 = Triplet_Loss(cfgs=cfgs, fabric=fabric)
+        if "orthogonal" in cfgs.loss_fn:
+            self.orthogonal = OrthogonalLoss(cfgs=cfgs, fabric=fabric)
+
 
     def forward(self, anchor: torch.Tensor, pos: torch.Tensor, neg: torch.Tensor, output: torch.Tensor,
                 target: torch.Tensor, neg_data: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -73,11 +76,14 @@ class Combined_Loss(nn.Module):
             context_weighting = self.cfgs.loss_weighting
             context_loss = self.context(anchor, pos, neg)
             loss += (context_weighting * context_loss)
-
         if "2triplet" in self.cfgs.loss_fn and neg_data is not None:
             triplet_weighting2 = self.cfgs.loss_weighting
             triplet_loss2 = self.triplet2(anchor, pos, neg_data)
             loss += (triplet_weighting2 * triplet_loss2)
+        if "orthogonal" in self.cfgs.loss_fn:
+            ortho_weighting = self.cfgs.ortho_weighting
+            ortho = self.orthogonal(anchor)
+            loss += (ortho * ortho_weighting)
 
         loss *= self.cfgs.alpha
 
@@ -91,6 +97,8 @@ class Combined_Loss(nn.Module):
                     wandb.log({"train/loss_ce": ce_loss.item()})
                 if "2triplet" in self.cfgs.loss_fn and neg_data is not None:
                     wandb.log({"train/loss_triplet2": triplet_loss2.item()})
+                if "orthogonal" in self.cfgs.loss_fn:
+                    wandb.log({"train/orthogonal": ortho.item()})
 
             print_str = ""
             if "triplet" in self.cfgs.loss_fn:
@@ -105,6 +113,61 @@ class Combined_Loss(nn.Module):
 
         return loss
 
+
+def cosine_dist(x, y):
+    """
+    Args:
+      x: pytorch Variable, with shape [B, m, d]
+      y: pytorch Variable, with shape [B, n, d]
+    Returns:
+      dist: pytorch Variable, with shape [B, m, n]
+    """
+    B = x.size(0)
+    m, n = x.size(1), y.size(1)
+    x_norm = torch.pow(x, 2).sum(2, keepdim=True).sqrt().expand(B, m, n)
+    y_norm = torch.pow(y, 2).sum(2, keepdim=True).sqrt().expand(B, n, m).transpose(-2, -1)
+    xy_intersection = x @ y.transpose(-2, -1)
+    dist = xy_intersection / (x_norm * y_norm)
+
+    return torch.abs(dist)
+  
+  
+class OrthogonalLoss(nn.Module):
+    def __init__(self, cfgs: Dict[str, Any], fabric: Any):
+        super(OrthogonalLoss, self).__init__()
+        self.cfgs = cfgs
+        self.fabric = fabric
+
+    def forward(self, anchor: torch.Tensor) -> torch.Tensor:
+        # Extract modality_tokens and avg_fusion_token from anchor
+        unflattened_anchor = torch.unflatten(anchor, 1, (-1, self.cfgs.vit_embed_dim))
+        modality_tokens = unflattened_anchor[:, :-1]
+        #avg_fusion_token = anchor[:, -1]
+
+        B, N, C = modality_tokens.shape
+        dist_mat = cosine_dist(modality_tokens, modality_tokens)  # B*N*N
+
+        top_triu = torch.triu(torch.ones(N, N, dtype=torch.bool), diagonal=1)
+        _dist = dist_mat[:, top_triu]
+
+        if self.cfgs.dynamic_balancer:
+
+          weight = F.softmax(_dist, dim=-1)
+          dist = torch.mean(torch.sum(weight*_dist, dim=1))
+
+        else:
+          dist = torch.mean(_dist, dim=(0, 1))
+
+        return dist
+
+
+
+
+
+
+
+
+    
 
 class Triplet_CE_Loss(nn.Module):
     """A class used to compute a combined loss of triplet loss and cross entropy loss.
@@ -263,6 +326,7 @@ class Center_Loss(nn.Module):
 
         self.centers = nn.Parameter(torch.randn(self.num_classes, self.feat_dim))
         self.fabric.to_device(self.centers)
+
 
     def forward(self, x: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
         """Forward pass to compute the Center_Loss.

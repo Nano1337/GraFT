@@ -92,7 +92,7 @@ def main(cfgs: dict):
     optimizer = optimizers.get_optim(cfgs, model)
     trainer = train.get_trainer(cfgs, fabric, model, train_loader, val_loader, optimizer, criterion, unique_dir_name)
     #Pruning Hyperparams:
-    amount = .7
+    amount = .2
     max_pruning_iterations = 30
     print('Entering Prune Algorithm')
     for iter in range(max_pruning_iterations):
