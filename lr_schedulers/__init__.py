@@ -1,5 +1,6 @@
 import torch.optim.lr_scheduler as lr_scheduler
 from lr_schedulers.warmup_cosine_schedule import WarmupCosineSchedule
+from lr_schedulers.warmup_sqrt_schedule import WarmupSqrtDecayWithPercentageCoolDown
 
 
 def get_lr_scheduler(cfgs: dict, optimizer, train_loader):
@@ -26,6 +27,10 @@ def get_lr_scheduler(cfgs: dict, optimizer, train_loader):
                                    warmup_steps=cfgs.warmup_steps,
                                    total_steps=(cfgs.num_epochs * len(train_loader)),
                                    cycles=cfgs.cycles)
+    elif cfgs.lr_scheduler_name == "warmup_sqrt_lr":
+        lrs = WarmupSqrtDecayWithPercentageCoolDown(optimizer,
+                                                    warmup_steps=cfgs.warmup_steps,
+                                                    total_steps=(cfgs.num_epochs * len(train_loader)))
     else:
         lrs = None
 

@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple, Optional
+from typing import Any, List, Tuple 
 
 import numpy as np
 import pandas as pd
@@ -7,7 +7,6 @@ from sklearn.manifold import TSNE
 import plotly
 import plotly.express as px
 import torch
-import torch.distributed as dist
 
 
 def eval_func(distmat: np.array,
@@ -89,28 +88,19 @@ class R1_mAP:
                  cfgs: dict,
                  num_query: int,
                  max_rank: int = 50,
-                 feat_norm: str = 'yes',
-                 process_group: Optional[dist.ProcessGroup] = None):
+                 feat_norm: str = 'yes'):
         self.fabric = fabric
         self.cfgs = cfgs
         self.num_query = num_query
         self.max_rank = max_rank
         self.feat_norm = feat_norm
-        self.process_group = process_group
+        self.val_device = torch.device(cfgs.gpus[0])
         self.reset()
-
-    def gather_tensors(self, tensor):
-        gathered = [torch.zeros_like(tensor) for _ in range(self.fabric.world_size)]
-        dist.all_gather(gathered, tensor, group=self.process_group)
-        gathered = torch.cat(gathered, dim=0)
-        return gathered
 
     def gather_lists(self, data):
         data = torch.tensor(data).to(self.fabric.device)
-        gathered = [torch.zeros_like(data) for _ in range(self.fabric.world_size)]
-        dist.all_gather(gathered, data, group=self.process_group)
-        gathered = torch.cat(gathered, dim=0).tolist()
-        return gathered
+        gathered = self.fabric.all_gather(data).view(-1)
+        return gathered.tolist()
 
     def reset(self):
         """Resets the features, person identifiers, and camera identifiers."""
@@ -127,11 +117,11 @@ class R1_mAP:
             camid: New camera identifiers.
         """
         if len(self.cfgs.gpus) > 1: 
-            feat = self.gather_tensors(feat)
+            feat = self.fabric.all_gather(feat).reshape(-1, feat.shape[-1])
             pid = self.gather_lists(pid)
             camid = self.gather_lists(camid)
 
-        if self.fabric.is_global_zero:
+        if self.fabric.device == self.val_device:
             self.feats = torch.cat([self.feats, feat], dim=0)
             self.pids.extend(pid)
             self.camids.extend(camid)
@@ -239,7 +229,7 @@ class R1_mAP:
             cmc: The CMC for each query.
             mAP: The mean Average Precision.
         """
-        if self.fabric.is_global_zero:
+        if self.fabric.device == self.val_device:
             if self.feat_norm == 'yes':
                 feats = torch.nn.functional.normalize(self.feats, dim=1, p=2)
             qf = feats[:self.num_query]

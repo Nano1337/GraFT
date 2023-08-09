@@ -98,7 +98,7 @@ class DataAugmentation_RGBNT(object):
                     )
                     img = TF.to_tensor(input_sample[modality_i][triplet])
 
-                    if self.augment and "random_erasure" in self.augment_type:
+                    if "random_erasure" in self.augment_type:
                         img = self.random_erase(img)
 
                     if self.modality_list[modality_i] == 'R':

@@ -29,7 +29,9 @@ def main(cfgs: dict):
     fabric = Fabric(accelerator="auto", devices=cfgs.gpus)
     fabric.launch()
 
-    if cfgs.use_wandb and fabric.is_global_zero:
+    val_device = torch.device(cfgs.gpus[0])
+
+    if cfgs.use_wandb and fabric.device == val_device:
         # WandB – Initialize a new run
         wandb.init(project=cfgs.wandb_project, config=cfgs)
         wandb.run.name = cfgs.wandb_run_name
@@ -43,7 +45,7 @@ def main(cfgs: dict):
 
     dataset_size = len(train_dataset) + len(val_dataset)
 
-    if fabric.is_global_zero: 
+    if fabric.device == val_device: 
         print("Dataset size total:", dataset_size)
         print("Training set size:", len(train_dataset))
         print("Validation set size:", len(val_dataset))
@@ -57,13 +59,8 @@ def main(cfgs: dict):
 
     print("Output directory:", output_dir)
 
-    process_group = None
-    if len(cfgs.gpus) > 1:
-        process_group = dist.new_group(
-            ranks=list(range(fabric.world_size)))
-
     # Get the model
-    model = models.get_model(cfgs=cfgs, fabric=fabric, process_group=process_group)
+    model = models.get_model(cfgs=cfgs, fabric=fabric)
 
     """
     for param in model.transformer.parameters():
@@ -72,7 +69,7 @@ def main(cfgs: dict):
     model.transformer.pooler.dense.weight.requires_grad = False
     """
 
-    if cfgs.use_wandb and fabric.is_global_zero:
+    if cfgs.use_wandb and fabric.device == val_device:
         # WandB – Watch the model
         wandb.watch(model)
 
@@ -81,10 +78,10 @@ def main(cfgs: dict):
     optimizer = optimizers.get_optim(cfgs, model)
 
     trainer = train.get_trainer(cfgs, fabric, model, train_loader, val_loader, optimizer,
-                                criterion, unique_dir_name, process_group=process_group)
+                                criterion, unique_dir_name)
 
     # print out model summary
-    if fabric.is_global_zero:
+    if fabric.device == val_device:
         trainer.print_networks()
 
     # begin training
@@ -92,7 +89,7 @@ def main(cfgs: dict):
         trainer.train()
     elif cfgs.phase == "val":
         output = trainer.validate()
-        if fabric.is_global_zero:
+        if fabric.device == val_device:
             print(output)
 
     # # if cfgs.show_ir_samples:

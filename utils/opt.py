@@ -159,6 +159,10 @@ def get_cfgs():
                         type=float,
                         default=0.5,
                         help='Cycles for warmup cosine LR scheduler')
+    parser.add_argument('--reset_scheduler',
+                        type=bool,
+                        default=False,
+                        help='Whether to reset the scheduler')
 
     # Training parameters
     parser.add_argument('--gpus',

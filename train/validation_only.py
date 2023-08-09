@@ -48,7 +48,7 @@ class Trainer_Validation_Only(Base_Trainer):
     and loading models.
     """
 
-    def __init__(self, cfgs, fabric, model, val_loader, process_group=None):
+    def __init__(self, cfgs, fabric, model, val_loader):
         """Initializes the trainer with provided configurations, model,
             data loaders, optimizer, and loss function.
 
@@ -72,7 +72,6 @@ class Trainer_Validation_Only(Base_Trainer):
                          model=model,
                          val_loader=val_loader)
         self.model = self.fabric.setup(self.model)
-        self.process_group = process_group
 
         # load checkpoint if exists
         if not os.path.isdir(cfgs.ckpt_dir):
@@ -86,8 +85,7 @@ class Trainer_Validation_Only(Base_Trainer):
         query_path = os.path.join(str(cfgs.dataroot), str(
             cfgs.dataset)) + "/rgbir/query"
         self.num_queries = len(os.listdir(query_path))
-        self.metric = R1_mAP(self.fabric, self.cfgs, self.num_queries, self.cfgs.max_rank,
-                             process_group=self.process_group)
+        self.metric = R1_mAP(self.fabric, self.cfgs, self.num_queries, self.cfgs.max_rank)
 
     def validate(self):
         """
@@ -157,15 +155,6 @@ class Trainer_Validation_Only(Base_Trainer):
                 print('Validation Time: ', round(end_time - start_time, 2),
                       'sec')  # print the time taken for validation
 
-                # log to optuna
-                if self.cfgs.use_optuna:
-                    self.trial.report(mAP, self.epoch)
-                    if self.trial.should_prune():
-                        print("Trial was pruned at epoch {}".format(
-                            self.epoch))
-                        wandb.run.summary["state"] = "pruned"
-                        wandb.finish(quiet=True)
-                        raise optuna.exceptions.TrialPruned()
 
         return mAP
 
