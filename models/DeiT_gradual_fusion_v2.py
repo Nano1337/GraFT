@@ -29,11 +29,11 @@ def weights_init_classifier(m: nn.Module) -> None:
             nn.init.constant_(m.bias, 0.0)
 
 
-class DEIT_Gradual_Fusion(nn.Module):
+class DEIT_Gradual_Fusion_V2(nn.Module):
     def __init__(self,
                  cfg: Dict[str, Union[int, str]], 
                  fabric: any) -> None:
-        super(DEIT_Gradual_Fusion, self).__init__()
+        super(DEIT_Gradual_Fusion_V2, self).__init__()
         self.cfg = cfg
         self.fabric = fabric
         hidden_size = self.cfg.vit_embed_dim
@@ -44,6 +44,7 @@ class DEIT_Gradual_Fusion(nn.Module):
 
         self.cls_anchor: ParameterDict = nn.ParameterDict()
         self.modality_transformers: ModuleDict = nn.ModuleDict()
+        self.modality_decoders: ModuleDict = nn.ModuleDict()
 
         for modality in self.cfg.model_modalities:
             self.cls_anchor[modality] = self.fabric.to_device(
@@ -54,7 +55,10 @@ class DEIT_Gradual_Fusion(nn.Module):
             self.modality_transformers[modality] = self.fabric.to_device(
                 nn.TransformerEncoderLayer(d_model=hidden_size,
                                            nhead=self.cfg.model_num_heads))
-
+            self.modality_decoders[modality] = self.fabric.to_device(
+                nn.TransformerDecoderLayer(d_model=hidden_size,
+                                           nhead=self.cfg.model_num_heads))
+            
         self.fusion_tokens = self.fabric.to_device(
             nn.Parameter(
                 nn.init.xavier_uniform_(
@@ -121,41 +125,41 @@ class DEIT_Gradual_Fusion(nn.Module):
         cls_anchor = {}
         for modality in self.cfg.model_modalities:
 
-            # pass through pretrained encoder
+            # pass through pretrained transformer encoder -> data tokens
             z_anchors[modality] = self.transformer(input_anchors[modality])
 
             # (B, S, D) -> (S, B, D)
             z_anchors[modality] = z_anchors[modality].last_hidden_state.permute(1, 0, 2)
 
-            # create modality tokens
+            # create learnable modality tokens
             cls_anchor[modality] = self.cls_anchor[modality].repeat(1, z_anchors[modality].shape[1], 1)
 
-            # concat modality, fusion, and data tokens
+            # concat fusion and data tokens
             if self.cfg.model_fusion_combos[0] == "f":
                 z_anchors[modality] = torch.cat(
-                    (cls_anchor[modality],
-                     self.fusion_tokens.repeat(1, z_anchors[modality].shape[1], 1), z_anchors[modality]),
+                    (self.fusion_tokens.repeat(1, z_anchors[modality].shape[1], 1), z_anchors[modality]),
                     dim=0)
             elif self.cfg.model_fusion_combos[0] == "d":
                 z_anchors[modality] = torch.cat(
-                    (cls_anchor[modality], z_anchors[modality],
+                    (z_anchors[modality],
                      self.fusion_tokens.repeat(1, z_anchors[modality].shape[1], 1)),
                     dim=0)
 
-            # pass through individual modality transformers
-            z_anchors_joint[modality] = self.modality_transformers[modality](
-                z_anchors[modality])
+            # passing through individual modality decoder
+            cls_anchor[modality] = self.modality_decoders[modality](tgt=cls_anchor[modality], memory=z_anchors[modality])
 
-            # (S, B, D) -> (B, S, D)
+            # passing through individual modality transformer
+            z_anchors_joint[modality] = self.modality_transformers[modality](z_anchors[modality])
+            
+            # (S, B, D) -> (B, S, D) 
             z_anchors_joint[modality] = z_anchors_joint[modality].permute(
                 1, 0, 2)
             cls_anchor[modality] = cls_anchor[modality].permute(1, 0, 2)
 
-            # extract fusion tokens
+            # extract fusion token
             fusion_anchor = z_anchors_joint[
-                modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
-                          self.cfg.model_num_fusion_tokens, :]
-            
+                modality][:, :self.cfg.model_num_fusion_tokens, :]
+
             # flatten 
             cls_anchor_flattened = cls_anchor[modality].reshape(
                 cls_anchor[modality].shape[0], -1)
@@ -188,41 +192,40 @@ class DEIT_Gradual_Fusion(nn.Module):
             pos_output = []
             cls_pos = {}
             for modality in self.cfg.model_modalities:
-            
-                # pass through pretrained encoder
+
+                # pass through pretrained transformer encoder -> data tokens
                 z_pos[modality] = self.transformer(input_positives[modality])
 
                 # (B, S, D) -> (S, B, D)
                 z_pos[modality] = z_pos[modality].last_hidden_state.permute(
                     1, 0, 2)
                 
-                # create modality tokens
-                cls_pos[modality] = self.cls_anchor[modality].repeat(
-                    1, z_pos[modality].shape[1], 1)
+                # create learnable modality tokens
+                cls_pos[modality] = self.cls_anchor[modality].repeat(1, z_pos[modality].shape[1], 1)
+
+                # concat fusion and data tokens
                 if self.cfg.model_fusion_combos[1] == "f":
                     z_pos[modality] = torch.cat(
-                        (cls_pos[modality],
-                         self.fusion_tokens.repeat(1, z_pos[modality].shape[1], 1), z_pos[modality]),
+                        (self.fusion_tokens.repeat(1, z_pos[modality].shape[1], 1), z_pos[modality]),
                         dim=0)
                 elif self.cfg.model_fusion_combos[1] == "d":
                     z_pos[modality] = torch.cat(
-                        (cls_pos[modality], z_pos[modality],
-                         self.fusion_tokens.repeat(1, z_pos[modality].shape[1], 1)),
+                        (z_pos[modality], self.fusion_tokens.repeat(1, z_pos[modality].shape[1], 1)),
                         dim=0)
+                    
+                # passing through individual modality decoder
+                cls_pos[modality] = self.modality_decoders[modality](tgt=cls_pos[modality], memory=z_pos[modality])
 
-                # pass through individual modality transformers
-                z_pos_joint[modality] = self.modality_transformers[modality](
-                    z_pos[modality])
+                # passing through individual modality transformer
+                z_pos_joint[modality] = self.modality_transformers[modality](z_pos[modality])
 
                 # (S, B, D) -> (B, S, D)
                 z_pos_joint[modality] = z_pos_joint[modality].permute(
                     1, 0, 2)
                 cls_pos[modality] = cls_pos[modality].permute(1, 0, 2)
 
-                # extract fusion tokens
-                fusion_pos = z_pos_joint[
-                    modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
-                              self.cfg.model_num_fusion_tokens, :]
+                # extract fusion token
+                fusion_pos = z_pos_joint[modality][:, :self.cfg.model_num_fusion_tokens, :]
 
                 # flatten
                 cls_pos_flattened = cls_pos[modality].reshape(
@@ -231,6 +234,7 @@ class DEIT_Gradual_Fusion(nn.Module):
                     fusion_pos.shape[0], -1)
                 pos_output.append(cls_pos_flattened)
                 fusion_pos_output.append(fusion_pos_flattened)
+
             fusion_pos_output = torch.mean(torch.stack(fusion_pos_output),
                                            dim=0)
 
@@ -249,57 +253,53 @@ class DEIT_Gradual_Fusion(nn.Module):
             cls_neg = {}
             for modality in self.cfg.model_modalities:
 
-                # pass through pretrained encoder
+                # pass through pretrained transformer encoder -> data tokens
                 z_neg[modality] = self.transformer(input_negatives[modality])
 
                 # (B, S, D) -> (S, B, D)
                 z_neg[modality] = z_neg[modality].last_hidden_state.permute(
                     1, 0, 2)
+                
+                # create learnable modality tokens
+                cls_neg[modality] = self.cls_anchor[modality].repeat(1, z_neg[modality].shape[1], 1)
 
-                # create modality tokens
-                cls_neg[modality] = self.cls_anchor[modality].repeat(
-                    1, z_neg[modality].shape[1], 1)
-
-                # concat modality, fusion, and data tokens
+                # concat fusion and data tokens
                 if self.cfg.model_fusion_combos[2] == "f":
                     z_neg[modality] = torch.cat(
-                        (cls_neg[modality],
-                         self.fusion_tokens.repeat(1, z_neg[modality].shape[1], 1), z_neg[modality]),
+                        (self.fusion_tokens.repeat(1, z_neg[modality].shape[1], 1), z_neg[modality]),
                         dim=0)
                 elif self.cfg.model_fusion_combos[2] == "d":
                     z_neg[modality] = torch.cat(
-                        (cls_neg[modality], z_neg[modality],
+                        (z_neg[modality],
                          self.fusion_tokens.repeat(1, z_neg[modality].shape[1], 1)),
                         dim=0)
 
-                # pass through individual modality transformers
-                z_neg_joint[modality] = self.modality_transformers[modality](
-                    z_neg[modality])
+                # passing through individual modality decoder
+                cls_neg[modality] = self.modality_decoders[modality](tgt=cls_neg[modality], memory=z_neg[modality])
+
+                # passing through individual modality transformer
+                z_neg_joint[modality] = self.modality_transformers[modality](z_neg[modality])
 
                 # (S, B, D) -> (B, S, D)
-                z_neg_joint[modality] = z_neg_joint[modality].permute(
-                    1, 0, 2)
+                z_neg_joint[modality] = z_neg_joint[modality].permute(1, 0, 2)
                 cls_neg[modality] = cls_neg[modality].permute(1, 0, 2)
 
-                # extract fusion tokens
+                # extract fusion token
                 if self.cfg.model_fusion_combos[2] == "f":
                     fusion_neg = z_neg_joint[
-                        modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
-                                  self.cfg.model_num_fusion_tokens, :]
+                        modality][:, :self.cfg.model_num_fusion_tokens, :]
                 else:
                     fusion_neg = z_neg_joint[
-                        modality][:, self.cfg.model_num_cls_tokens +
-                                  self.cfg.data_token_step:self.cfg.model_num_cls_tokens +
-                                  self.cfg.model_num_fusion_tokens +
+                        modality][:, self.cfg.data_token_step:self.cfg.model_num_fusion_tokens +
                                   self.cfg.data_token_step, :]
-                
+
                 # flatten
+                cls_neg_flattened = cls_neg[modality].reshape(cls_neg[modality].shape[0], -1)
                 fusion_neg_flattened = fusion_neg.reshape(
                     fusion_neg.shape[0], -1)
-                cls_neg_flattened = cls_neg[modality].reshape(
-                    cls_neg[modality].shape[0], -1)
                 neg_output.append(cls_neg_flattened)
                 fusion_neg_output.append(fusion_neg_flattened)
+                
             fusion_neg_output = torch.mean(torch.stack(fusion_neg_output),
                                            dim=0)
 
