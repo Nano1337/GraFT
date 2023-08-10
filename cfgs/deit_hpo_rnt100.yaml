@@ -1,12 +1,12 @@
 # TODO: Check which parameters here are actually used and prune out all the ones that aren't
 
 # General parameters
-use_optuna: False
+use_optuna: True
 output_dir: '/data/datasets/research-datasets/output_dir'
 seed: 1746756492
 new_random: True
 phase: 'train'
-cfg_name: 'deit-rnt100-orthogonal'
+cfg_name: 'deit-rnt100-hpo-tokens-heads'
 
 # Dataset parameters
 dataroot: '/data/datasets/research-datasets'
@@ -18,7 +18,7 @@ hflip: 0.5 # threshold for random horizontal flip
 resize_min: 0.5 # only if data_augmentation is True
 resize_max: 1.0 # only if data_augmentation is True
 data_augmentation: False
-augment_type: "random_erasure" # Optional: "random_erasure"
+augment_type: "" # Optional: "random_erasure"
 train_ratio: 0.8 # use 80% of the data for training and 20% for validation
 one_hot: True
 image_num_for_reid_train: 1 # Default 1 -- DO NOT CHANGE THIS ONE AND num_triplet_samples AT SAME TIME THEY DO SAME THING
@@ -37,30 +37,27 @@ model_decoder_output_class_num: 50 # change this when changing datasets
 model_fusion_combos: 'ffd'
 data_token_step: 0
 pretrained_model: "distilled-224"
-unfreeze: False
 
 # Loss parameters
-loss_fn: "ce+triplet_euclidean_soft_margin_orthogonal"
+loss_fn: "center+ce+triplet_euclidean_soft_margin" 
 loss_weighting: 0.5
 center_weighting: 0.0005
-ortho_weighting: .5
-dynamic_balancer: True
 label_smoothing: 0.0
 alpha: 1
 
 # Optimizer parameters
 optimizer: 'adamw'
-lr: 0.00002
+lr: 0.00001
 weight_decay: 0.001
 beta1: 0.83
 beta2: 0.97
-lr_scheduler_name: 'warmup_sqrt_lr'
+lr_scheduler_name: 'warmup_cosine_lr'
 warmup_steps: 50
 max_lr: 0.01
  
 # Training parameters
 # gpus: [0, 1, 2, 3]
-gpus: [4, 5, 6, 7]
+gpus: [2,3,4,5,6,7]
 #gpus: [5,7]
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
@@ -72,44 +69,40 @@ model_name: "deit_gradual_fusion"
 trainer_name: "trainer_rgbn_triplet"
 verbose: True # print more information
 max_rank: 50 # max number of ranks to calculate cmc and mAP
-n_trials: 10 # number of trials for optuna
+n_trials: 50 # number of trials for optuna
 
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: "mm-mafia-reid-new-mAP"
-study_name: "deit-rnt100-orthogonal"
-wandb_run_name: "deit-rnt100-orthogonal"
-wandb_trial_name: "All_Tokens_to_All_Tokens_2modtokens_halfweight"
+study_name: "deit-rnt100-hpo-tokens-heads"
+wandb_run_name: "deit-rnt100-hpo-tokens-heads"
+wandb_trial_name: "unfrozen-from-init"
 
 hyperparams:
-  ortho_weighting: 
-    min: .5
-    max: .5
-    type: float
   lr:
-    min: 0.00002
-    max: 0.00002
+    min: 0.000001
+    max: 0.0001
     type: loguniform
   weight_decay:
-    min: 0.001
-    max: 0.001
+    min: 0.0005
+    max: 0.005
     type: loguniform
   beta1:
-    min: 0.83
-    max: 0.83
+    min: 0.70
+    max: 0.95
     type: float
   beta2:
-    min: 0.975
-    max: 0.975
+    min: 0.95
+    max: 0.99
     type: float
   model_num_cls_tokens: 
-    min: 2
-    max: 2
+    min: 20
+    max: 40
     type: int
   model_num_fusion_tokens: 
-    min: 1
-    max: 1
+    min: 20
+    max: 40
     type: int
   model_num_heads: 
-    opt: [8]
+    opt: [8,12,16]
     type: categorical

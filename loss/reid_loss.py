@@ -142,7 +142,7 @@ class OrthogonalLoss(nn.Module):
     def forward(self, anchor: torch.Tensor) -> torch.Tensor:
         # Extract modality_tokens and avg_fusion_token from anchor
         unflattened_anchor = torch.unflatten(anchor, 1, (-1, self.cfgs.vit_embed_dim))
-        modality_tokens = unflattened_anchor[:, :-1]
+        modality_tokens = unflattened_anchor #unflattened_anchor[:, :-1]
         #avg_fusion_token = anchor[:, -1]
 
         B, N, C = modality_tokens.shape

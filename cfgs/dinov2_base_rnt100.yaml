@@ -1,12 +1,12 @@
 # TODO: Check which parameters here are actually used and prune out all the ones that aren't
 
 # General parameters
-use_optuna: False
+use_optuna: True
 output_dir: '/data/datasets/research-datasets/output_dir'
-seed: 1746756492
+seed: 1234
 new_random: True
 phase: 'train'
-cfg_name: 'deit-rnt100-orthogonal'
+cfg_name: 'dinov2b-rnt100-hpo'
 
 # Dataset parameters
 dataroot: '/data/datasets/research-datasets'
@@ -18,7 +18,7 @@ hflip: 0.5 # threshold for random horizontal flip
 resize_min: 0.5 # only if data_augmentation is True
 resize_max: 1.0 # only if data_augmentation is True
 data_augmentation: False
-augment_type: "random_erasure" # Optional: "random_erasure"
+augment_type: "" # Optional: "random_erasure"
 train_ratio: 0.8 # use 80% of the data for training and 20% for validation
 one_hot: True
 image_num_for_reid_train: 1 # Default 1 -- DO NOT CHANGE THIS ONE AND num_triplet_samples AT SAME TIME THEY DO SAME THING
@@ -32,84 +32,79 @@ model_anchor_only_reid: False # false by default
 model_num_cls_tokens: 2
 model_num_fusion_tokens: 2
 model_num_heads: 8
-vit_embed_dim: 768 # 384 for dino, 768 normally
+vit_embed_dim: 768 # 384 for dino small, 768 normally
 model_decoder_output_class_num: 50 # change this when changing datasets
 model_fusion_combos: 'ffd'
 data_token_step: 0
-pretrained_model: "distilled-224"
-unfreeze: False
+pretrained_model: "dinov2-base"
+interpolate_pos_encoding: False
+freeze: False
 
 # Loss parameters
-loss_fn: "ce+triplet_euclidean_soft_margin_orthogonal"
+loss_fn: "center+ce+triplet_euclidean_soft_margin" 
 loss_weighting: 0.5
 center_weighting: 0.0005
-ortho_weighting: .5
-dynamic_balancer: True
 label_smoothing: 0.0
 alpha: 1
 
 # Optimizer parameters
 optimizer: 'adamw'
-lr: 0.00002
+lr: 0.00001
 weight_decay: 0.001
-beta1: 0.83
-beta2: 0.97
-lr_scheduler_name: 'warmup_sqrt_lr'
+beta1: 0.81
+beta2: 0.975
+lr_scheduler_name: 'warmup_cosine_lr'
 warmup_steps: 50
 max_lr: 0.01
  
 # Training parameters
-# gpus: [0, 1, 2, 3]
-gpus: [4, 5, 6, 7]
+#gpus: [2, 3]
+gpus: [0,1,2,3,4,5]
 #gpus: [5,7]
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
-ckpt_full_path: null # '/data/datasets/research-datasets/ckpt_dir/20230730-202650-ffd_three-loss-euclidean_DEiT-B-224-distilled-inference/best.pth' #'/data/datasets/research-datasets/ckpt_dir/20230727-112754-dino_middle_fusion_noconv_exp2_flex_size/best.pth
+ckpt_full_path: null #'/data/datasets/research-datasets/ckpt_dir/20230804-085345-dinov2-base/best.pth' #'/data/datasets/research-datasets/ckpt_dir/20230730-202650-ffd_three-loss-euclidean_DEiT-B-224-distilled-inference/best.pth' #'/data/datasets/research-datasets/ckpt_dir/20230727-112754-dino_middle_fusion_noconv_exp2_flex_size/best.pth
 batch_size: 20
-num_epochs: 30
+num_epochs: 75
 print_freq: 50
-model_name: "deit_gradual_fusion"
+model_name: "dino_gradual_fusion"
 trainer_name: "trainer_rgbn_triplet"
 verbose: True # print more information
 max_rank: 50 # max number of ranks to calculate cmc and mAP
-n_trials: 10 # number of trials for optuna
+n_trials: 50 # number of trials for optuna
 
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: "mm-mafia-reid-new-mAP"
-study_name: "deit-rnt100-orthogonal"
-wandb_run_name: "deit-rnt100-orthogonal"
-wandb_trial_name: "All_Tokens_to_All_Tokens_2modtokens_halfweight"
+study_name: "dinov2b-rnt100-hpo"
+wandb_run_name: "dinov2b-rnt100-hpo"
+wandb_trial_name: "dinov2b-rnt100-hpo"
 
 hyperparams:
-  ortho_weighting: 
-    min: .5
-    max: .5
-    type: float
   lr:
-    min: 0.00002
-    max: 0.00002
+    min: 0.000005
+    max: 0.0001
     type: loguniform
   weight_decay:
-    min: 0.001
-    max: 0.001
+    min: 0.0005
+    max: 0.003
     type: loguniform
   beta1:
-    min: 0.83
-    max: 0.83
+    min: 0.80
+    max: 0.90
     type: float
   beta2:
-    min: 0.975
-    max: 0.975
+    min: 0.96
+    max: 0.99
     type: float
   model_num_cls_tokens: 
     min: 2
-    max: 2
+    max: 8
     type: int
   model_num_fusion_tokens: 
-    min: 1
-    max: 1
+    min: 2
+    max: 8
     type: int
   model_num_heads: 
-    opt: [8]
+    opt: [6, 8, 12, 16]
     type: categorical
