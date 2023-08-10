@@ -12,6 +12,9 @@ mmenv/
 error_logs/
 pretrain_IR/
 
+train.sh
+train_optuna.sh
+
 # ignore wandb
 wandb/
 __pycache__/
