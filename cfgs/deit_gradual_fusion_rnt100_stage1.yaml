@@ -6,7 +6,7 @@ output_dir: '/data/datasets/research-datasets/output_dir'
 seed: 906579864 
 new_random: False
 phase: 'train'
-cfg_name: 'deit-rnt100-multistage'
+cfg_name: 'deit-rnt100-modelv2'
 
 # Dataset parameters
 dataroot: '/data/datasets/research-datasets'
@@ -59,15 +59,15 @@ reset_scheduler: False
 
 # Training parameters
 # gpus: [1, 2, 3, 4, 5, 6, 7]
-gpus: [3, 5, 6, 7]
-# gpus: [5, 6, 7, 4]
+# gpus: [3, 5, 6, 7]
+gpus: [1, 2, 3, 4]
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
 ckpt_full_path: null 
 batch_size: 20
-num_epochs: 25
+num_epochs: 40
 print_freq: 50
-model_name: "deit_gradual_fusion"
+model_name: "deit_gradual_fusion_v2"
 trainer_name: "trainer_rgbn_triplet"
 verbose: True # print more information
 max_rank: 50 # max number of ranks to calculate cmc and mAP
@@ -76,9 +76,9 @@ n_trials: 1 # number of trials for optuna
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: "mm-mafia-reid-new-mAP"
-study_name: "deit-rnt100-multistage"
-wandb_run_name: "deit-rnt100-multistage"
-wandb_trial_name: "stage1"
+study_name: "deit-rnt100-modelv2"
+wandb_run_name: "deit-rnt100-modelv2"
+wandb_trial_name: "stage1-modality=4"
 
 hyperparams:
   lr:
@@ -98,8 +98,8 @@ hyperparams:
     max: 0.98
     type: float
   model_num_cls_tokens: 
-    min: 1
-    max: 1
+    min: 4
+    max: 4
     type: int
   model_num_fusion_tokens: 
     min: 1
