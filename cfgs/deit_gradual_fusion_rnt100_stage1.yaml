@@ -6,7 +6,7 @@ output_dir: '/data/datasets/research-datasets/output_dir'
 seed: 906579864 
 new_random: False
 phase: 'train'
-cfg_name: 'deit-rnt100-modelv2'
+cfg_name: "deit-rnt100-model-modality-tok"
 
 # Dataset parameters
 dataroot: '/data/datasets/research-datasets'
@@ -23,7 +23,7 @@ train_ratio: 0.8 # use 80% of the data for training and 20% for validation
 one_hot: True
 image_num_for_reid_train: 1 # Default 1 -- DO NOT CHANGE THIS ONE AND num_triplet_samples AT SAME TIME THEY DO SAME THING
 image_num_for_reid_validate: 25 # Default 25
-num_triplet_samples: 8 # Default 1
+num_triplet_samples: 25 # Default 1
 
 # Model parameters 
 model_modalities: ['R', 'N', 'T']
@@ -58,16 +58,15 @@ max_lr: 0.01
 reset_scheduler: False
 
 # Training parameters
-# gpus: [1, 2, 3, 4, 5, 6, 7]
-# gpus: [3, 5, 6, 7]
-gpus: [1, 2, 3, 4]
+gpus: [0, 1, 2, 3]
+train_stage: 1
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
 ckpt_full_path: null 
 batch_size: 20
 num_epochs: 40
 print_freq: 50
-model_name: "deit_gradual_fusion_v2"
+model_name: "deit_gradual_fusion"
 trainer_name: "trainer_rgbn_triplet"
 verbose: True # print more information
 max_rank: 50 # max number of ranks to calculate cmc and mAP
@@ -76,14 +75,18 @@ n_trials: 1 # number of trials for optuna
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: "mm-mafia-reid-new-mAP"
-study_name: "deit-rnt100-modelv2"
-wandb_run_name: "deit-rnt100-modelv2"
-wandb_trial_name: "stage1-modality=4"
+study_name: "deit-rnt100-model-modality-tok"
+wandb_run_name: "stage1_-_new_lr=0.00002-cls=0-train-data=25"
+wandb_trial_name: "stage1_-_new_lr=0.00002-cls=0-train-data=25"
+lrnable_token: 'new'
+lagging_modality_token: True
 
 hyperparams:
   lr:
     min: 0.00002
     max: 0.00002
+    # min: 0.00004
+    # max: 0.00004
     type: loguniform
   weight_decay:
     min: 0.001
@@ -98,8 +101,8 @@ hyperparams:
     max: 0.98
     type: float
   model_num_cls_tokens: 
-    min: 4
-    max: 4
+    min: 0
+    max: 0
     type: int
   model_num_fusion_tokens: 
     min: 1

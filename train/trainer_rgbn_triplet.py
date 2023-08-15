@@ -367,6 +367,10 @@ class Trainer_RGBN_Triplet(Base_Trainer):
 
         try:
             remainder = self.fabric.load(load_path, state)
+            print(self.model.named_parameters())
+            if 'fusion_avg_params' in self.model.named_parameters() and self.cfgs.train_stage != 1:
+                print("set fusion_avg_params to trainable!")
+                self.model.fusion_avg_params.requires_grad = True
         except Exception as e:
             print(f"Error loading network state: {e}")
             return
