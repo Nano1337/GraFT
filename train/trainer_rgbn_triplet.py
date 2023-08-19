@@ -161,8 +161,7 @@ class Trainer_RGBN_Triplet(Base_Trainer):
             targets = torch.argmax(batch_target, dim=-1)
 
             # Access output embeddings
-            anchor, pos, neg = embeddings["z_reparamed_anchor"], embeddings[
-                "z_reparamed_positive"], embeddings["z_reparamed_negative"]
+            anchor, pos, neg = embeddings["z_reparamed_anchor"], embeddings["z_reparamed_positive"], embeddings["z_reparamed_negative"]
 
             # Compare predictions to the truth
             running_corrects += torch.sum(preds == targets.data).item()

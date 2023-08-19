@@ -10,6 +10,7 @@ from models.DINO_gradual_fusion import DINO_Gradual_Fusion
 from models.DeiT_vanilla_fusion import DEIT_Vanilla_Fusion
 from models.DeiT_gradual_fusion_v2 import DEIT_Gradual_Fusion_V2
 from models.DeiT_gradual_fusion_v3 import DEIT_Gradual_Fusion_V3
+from models.DeiT_gradual_fusion_v4 import DEIT_Gradual_Fusion_V4
 
 def get_model(cfgs: dict, fabric: any) -> torch.nn.Module:
     """Gets the specified model based on the provided configurations.
@@ -36,6 +37,8 @@ def get_model(cfgs: dict, fabric: any) -> torch.nn.Module:
         model = DEIT_Gradual_Fusion_V2(cfg=cfgs, fabric=fabric)
     elif cfgs.model_name == "deit_gradual_fusion_v3":
         model = DEIT_Gradual_Fusion_V3(cfg=cfgs, fabric=fabric)
+    elif cfgs.model_name == "deit_gradual_fusion_v4":
+        model = DEIT_Gradual_Fusion_V4(cfg=cfgs, fabric=fabric)
     else:
         model = None
 

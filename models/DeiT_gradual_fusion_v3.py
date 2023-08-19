@@ -28,7 +28,7 @@ def weights_init_classifier(m: nn.Module) -> None:
         if m.bias is not None:
             nn.init.constant_(m.bias, 0.0)
 
-
+# On learnable fusion tokens, 
 class DEIT_Gradual_Fusion_V3(nn.Module):
     def __init__(self,
                  cfg: Dict[str, Union[int, str]], 

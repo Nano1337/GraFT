@@ -268,6 +268,9 @@ class DEIT_Gradual_Fusion(nn.Module):
                 pos_output.append(fusion_pos_output)
                 pos_output = torch.cat(pos_output, dim=1)
 
+
+                
+
             z_neg = {}
             z_neg_joint = {}
             fusion_neg_output = []
