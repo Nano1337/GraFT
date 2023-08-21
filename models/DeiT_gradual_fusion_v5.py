@@ -29,34 +29,72 @@ def weights_init_classifier(m: nn.Module) -> None:
             nn.init.constant_(m.bias, 0.0)
 
 
-class DEIT_Gradual_Fusion(nn.Module):
+class DEIT_Gradual_Fusion_V5(nn.Module):
     def __init__(self,
                  cfg: Dict[str, Union[int, str]], 
                  fabric: any) -> None:
-        super(DEIT_Gradual_Fusion, self).__init__()
+        super(DEIT_Gradual_Fusion_V5, self).__init__()
         self.cfg = cfg
         self.fabric = fabric
         hidden_size = self.cfg.vit_embed_dim
-        self.feat_dim = self.cfg.vit_embed_dim * (
-            len(self.cfg.model_modalities) *
-            self.cfg.model_num_cls_tokens +
-            self.cfg.model_num_fusion_tokens)
+        # self.feat_dim = self.cfg.vit_embed_dim * (
+        #     len(self.cfg.model_modalities) *
+        #     self.cfg.model_num_cls_tokens +
+        #     self.cfg.model_num_fusion_tokens)
+        self.feat_dim = len(self.cfg.model_modalities) * 169
 
         self.cls_anchor: ParameterDict = nn.ParameterDict()
         self.modality_transformers: ModuleDict = nn.ModuleDict()
+        self.conv_pool_embedding: ModuleDict = nn.ModuleDict() # downsample enbedding dimension
 
-        for modality in self.cfg.model_modalities:
-            self.cls_anchor[modality] = nn.Parameter(
+        conv_p = [[self.cfg.model_num_fusion_tokens, 3, 32, 2],
+                [3, 3, 33, 2],]
+
+        #new
+        if self.cfg.lrnable_token == 'new':
+            for modality in self.cfg.model_modalities:
+                self.cls_anchor[modality] = nn.Parameter(
+                        nn.init.xavier_uniform_(
+                            torch.empty(self.cfg.model_num_cls_tokens, 1,
+                                        hidden_size)).to(self.fabric.device))
+                self.modality_transformers[modality] = nn.TransformerEncoderLayer(d_model=hidden_size,
+                                            nhead=self.cfg.model_num_heads).to(self.fabric.device)
+                self.conv_pool_embedding[modality] = nn.Sequential(
+                    nn.Conv1d(in_channels=conv_p[0][0], out_channels=conv_p[0][1], kernel_size=conv_p[0][2], stride=conv_p[0][3]),
+                    nn.BatchNorm1d(conv_p[0][1]),
+                    # nn.ReLU(inplace=True),
+                    nn.Conv1d(in_channels=conv_p[1][0], out_channels=conv_p[1][1], kernel_size=conv_p[1][2], stride=conv_p[1][3]),
+                    nn.BatchNorm1d(conv_p[1][1]),
+                )
+
+            self.fusion_tokens = nn.Parameter(
                     nn.init.xavier_uniform_(
-                        torch.empty(self.cfg.model_num_cls_tokens, 1,
+                        torch.empty(self.cfg.model_num_fusion_tokens, 1,
                                     hidden_size)).to(self.fabric.device))
-            self.modality_transformers[modality] = nn.TransformerEncoderLayer(d_model=hidden_size,
-                                        nhead=self.cfg.model_num_heads).to(self.fabric.device)
+            
+        elif self.cfg.lrnable_token == 'old':
 
-        self.fusion_tokens = nn.Parameter(
-                nn.init.xavier_uniform_(
-                    torch.empty(self.cfg.model_num_fusion_tokens, 1,
-                                hidden_size)).to(self.fabric.device))
+            for modality in self.cfg.model_modalities:
+                self.cls_anchor[modality] = self.fabric.to_device(nn.Parameter(
+                        nn.init.xavier_uniform_(
+                            torch.empty(self.cfg.model_num_cls_tokens, 1,
+                                        hidden_size))))
+                self.modality_transformers[modality] = self.fabric.to_device(
+                    nn.TransformerEncoderLayer(d_model=hidden_size,
+                                               nhead=self.cfg.model_num_heads))
+                self.conv_pool_embedding[modality] = nn.Sequential(
+                    nn.Conv1d(in_channels=conv_p[0][0], out_channels=conv_p[0][1], kernel_size=conv_p[0][2], stride=conv_p[0][3]),
+                    nn.BatchNorm1d(conv_p[0][1]),
+                    # nn.ReLU(inplace=True),
+                    nn.Conv1d(in_channels=conv_p[1][0], out_channels=conv_p[1][1], kernel_size=conv_p[1][2], stride=conv_p[1][3]),
+                    nn.BatchNorm1d(conv_p[1][1]),
+                )
+
+            self.fusion_tokens = self.fabric.to_device(nn.Parameter(
+                    nn.init.xavier_uniform_(
+                        torch.empty(self.cfg.model_num_fusion_tokens, 1,
+                                    hidden_size))))
+        
         
         self.fusion_avg_params = nn.Parameter(self.fabric.to_device(
                                                 torch.full((len(self.cfg.model_modalities),), 1/len(self.cfg.model_modalities)) 
@@ -92,10 +130,7 @@ class DEIT_Gradual_Fusion(nn.Module):
             self.bottleneck = nn.SyncBatchNorm.convert_sync_batchnorm(
                 self.bottleneck, process_group=dist.group.WORLD)
 
-        self.decoder = nn.Linear(
-            (self.cfg.model_num_fusion_tokens +
-             self.cfg.model_num_cls_tokens *
-             len(self.cfg.model_modalities)) * hidden_size,
+        self.decoder = nn.Linear(self.feat_dim,
             self.cfg.model_decoder_output_class_num,
             bias=False)
 
@@ -154,12 +189,14 @@ class DEIT_Gradual_Fusion(nn.Module):
             cls_anchor[modality] = cls_anchor[modality].permute(1, 0, 2) # (batch, seq_len, dim)
 
             # extract fusion tokens
-            fusion_anchor = z_anchors_joint[
-                modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
-                          self.cfg.model_num_fusion_tokens, :]
+            fusion_anchor = z_anchors_joint[modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens + self.cfg.model_num_fusion_tokens, :]
             if not self.cfg.lagging_modality_token:
                 print("plucking out modality tokens")
                 cls_anchor[modality] = z_anchors_joint[modality][:, :self.cfg.model_num_cls_tokens, :]
+
+            # print("fusion_anchor bef", fusion_anchor.shape)
+            fusion_anchor = self.conv_pool_embedding[modality](fusion_anchor)
+            # print("fusion_anchor aft", fusion_anchor.shape)
 
             # flatten 
             cls_anchor_flattened = cls_anchor[modality].reshape(
@@ -230,6 +267,8 @@ class DEIT_Gradual_Fusion(nn.Module):
                               self.cfg.model_num_fusion_tokens, :]
                 if not self.cfg.lagging_modality_token:
                     cls_pos[modality] = z_pos_joint[modality][:, :self.cfg.model_num_cls_tokens, :]
+
+                fusion_pos = self.conv_pool_embedding[modality](fusion_pos)
 
                 # flatten
                 cls_pos_flattened = cls_pos[modality].reshape(
@@ -305,6 +344,8 @@ class DEIT_Gradual_Fusion(nn.Module):
                 
                 if not self.cfg.lagging_modality_token:
                     cls_neg[modality] = z_neg_joint[modality][:, :self.cfg.model_num_cls_tokens, :]
+
+                fusion_neg = self.conv_pool_embedding[modality](fusion_neg)
                 
                 # flatten
                 fusion_neg_flattened = fusion_neg.reshape(

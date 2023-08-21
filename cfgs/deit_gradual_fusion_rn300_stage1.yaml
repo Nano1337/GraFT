@@ -1,15 +1,17 @@
+# TODO: Check which parameters here are actually used and prune out all the ones that aren't
+
 # General parameters
 use_optuna: True
 output_dir: '/data/datasets/research-datasets/output_dir'
 seed: 906579864 
 new_random: False
 phase: 'train'
-cfg_name: "deit-rnt100-model-modality-tok"
+cfg_name: "deit-rn300-model-modality-tok"
 
 # Dataset parameters
 dataroot: '/data/datasets/research-datasets'
-dataset: 'reid_mm/RGBNT100'
-dataset_name: 'RGBNT100'
+dataset: 'reid_mm/RGBN300'
+dataset_name: 'RGBN300'
 workers: 128
 input_size: [224, 224] # 224 normally, 384 for larger deit
 hflip: 0.5 # threshold for random horizontal flip
@@ -24,14 +26,14 @@ image_num_for_reid_validate: 25 # Default 25
 num_triplet_samples: 8 # Default 1
 
 # Model parameters 
-model_modalities: ['R', 'N', 'T']
+model_modalities: ['R', 'N']
 non_generalizable_inputs: False
 model_anchor_only_reid: False # false by default
-model_num_cls_tokens: 0
+model_num_cls_tokens: 1
 model_num_fusion_tokens: 1
 model_num_heads: 8
 vit_embed_dim: 768 # 384 for dino, 768 normally
-model_decoder_output_class_num: 50 # change this when changing datasets
+model_decoder_output_class_num: 150 # change this when changing datasets
 model_fusion_combos: 'ffd'
 data_token_step: 0
 pretrained_model: "distilled-224"
@@ -56,7 +58,7 @@ max_lr: 0.01
 reset_scheduler: False
 
 # Training parameters
-gpus: [0]
+gpus: [4, 5, 6]
 train_stage: 1
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
@@ -74,15 +76,17 @@ n_trials: 1 # number of trials for optuna
 use_wandb: True
 wandb_project: "mm-mafia-reid-new-mAP"
 study_name: "deit-rnt100-model-data-tok-conv-pool"
-wandb_run_name: "stage1_cls=0_fus=1-hyperams=old-no-act_distill-fus"
-wandb_trial_name: "stage1_cls=0_fus=1-hyperams=old-no-act_distill-fus"
-lrnable_token: 'new' # eva if ur seeing this u could take it out
+wandb_run_name: "stage1_cls=0_fus=1-no-distil-rn300"
+wandb_trial_name: "stage1_cls=0_fus=1-no-distil-rn300"
+lrnable_token: 'new'
 lagging_modality_token: True
 
 hyperparams:
   lr:
     min: 0.00002
     max: 0.00002
+    # min: 0.00004
+    # max: 0.00004
     type: loguniform
   weight_decay:
     min: 0.001
