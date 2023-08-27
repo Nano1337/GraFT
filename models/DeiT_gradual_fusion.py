@@ -40,7 +40,7 @@ class DEIT_Gradual_Fusion(nn.Module):
         self.feat_dim = self.cfg.vit_embed_dim * (
             len(self.cfg.model_modalities) *
             self.cfg.model_num_cls_tokens +
-            self.cfg.model_num_fusion_tokens)
+            1) #self.cfg.model_num_fusion_tokens)
 
         self.cls_anchor: ParameterDict = nn.ParameterDict()
         self.modality_transformers: ModuleDict = nn.ModuleDict()
@@ -93,9 +93,7 @@ class DEIT_Gradual_Fusion(nn.Module):
                 self.bottleneck, process_group=dist.group.WORLD)
 
         self.decoder = nn.Linear(
-            (self.cfg.model_num_fusion_tokens +
-             self.cfg.model_num_cls_tokens *
-             len(self.cfg.model_modalities)) * hidden_size,
+            self.feat_dim,
             self.cfg.model_decoder_output_class_num,
             bias=False)
 
@@ -154,9 +152,8 @@ class DEIT_Gradual_Fusion(nn.Module):
             cls_anchor[modality] = cls_anchor[modality].permute(1, 0, 2) # (batch, seq_len, dim)
 
             # extract fusion tokens
-            fusion_anchor = z_anchors_joint[
-                modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
-                          self.cfg.model_num_fusion_tokens, :]
+            #fusion_anchor = z_anchors_joint[modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens + self.cfg.model_num_fusion_tokens, :]
+            fusion_anchor = z_anchors_joint[modality][:, self.cfg.model_num_cls_tokens, :]
             if not self.cfg.lagging_modality_token:
                 print("plucking out modality tokens")
                 cls_anchor[modality] = z_anchors_joint[modality][:, :self.cfg.model_num_cls_tokens, :]
@@ -225,9 +222,11 @@ class DEIT_Gradual_Fusion(nn.Module):
                 cls_pos[modality] = cls_pos[modality].permute(1, 0, 2)
 
                 # extract fusion tokens
+                # fusion_pos = z_pos_joint[
+                #     modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
+                #               self.cfg.model_num_fusion_tokens, :]
                 fusion_pos = z_pos_joint[
-                    modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
-                              self.cfg.model_num_fusion_tokens, :]
+                    modality][:, self.cfg.model_num_cls_tokens, :]
                 if not self.cfg.lagging_modality_token:
                     cls_pos[modality] = z_pos_joint[modality][:, :self.cfg.model_num_cls_tokens, :]
 
@@ -292,16 +291,18 @@ class DEIT_Gradual_Fusion(nn.Module):
                 cls_neg[modality] = cls_neg[modality].permute(1, 0, 2)
 
                 # extract fusion tokens
-                if self.cfg.model_fusion_combos[2] == "f":
-                    fusion_neg = z_neg_joint[
-                        modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
-                                  self.cfg.model_num_fusion_tokens, :]
-                else:
-                    fusion_neg = z_neg_joint[
-                        modality][:, self.cfg.model_num_cls_tokens +
-                                  self.cfg.data_token_step:self.cfg.model_num_cls_tokens +
-                                  self.cfg.model_num_fusion_tokens +
-                                  self.cfg.data_token_step, :]
+                # if self.cfg.model_fusion_combos[2] == "f":
+                #     fusion_neg = z_neg_joint[
+                #         modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
+                #                   self.cfg.model_num_fusion_tokens, :]
+                # else:
+                #     fusion_neg = z_neg_joint[
+                #         modality][:, self.cfg.model_num_cls_tokens +
+                #                   self.cfg.data_token_step:self.cfg.model_num_cls_tokens +
+                #                   self.cfg.model_num_fusion_tokens +
+                #                   self.cfg.data_token_step, :]
+
+                fusion_neg = z_neg_joint[modality][:, self.cfg.model_num_cls_tokens, :] # new
                 
                 if not self.cfg.lagging_modality_token:
                     cls_neg[modality] = z_neg_joint[modality][:, :self.cfg.model_num_cls_tokens, :]
