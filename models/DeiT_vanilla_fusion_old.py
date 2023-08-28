@@ -29,19 +29,20 @@ def weights_init_classifier(m: nn.Module) -> None:
             nn.init.constant_(m.bias, 0.0)
 
 
-class DEIT_Vanilla_Fusion(nn.Module):
+class DEIT_Vanilla_Fusion_old(nn.Module):
     def __init__(self,
                  cfg: Dict[str, Union[int, str]], 
                  fabric: any) -> None:
-        super(DEIT_Vanilla_Fusion, self).__init__()
+        super(DEIT_Vanilla_Fusion_old, self).__init__()
         self.cfg = cfg
         self.fabric = fabric
-        hidden_size = self.cfg.vit_embed_dim 
-        self.feat_dim = self.cfg.vit_embed_dim # Fuse all 3 modalities into one via averaging 
+        hidden_size = self.cfg.vit_embed_dim
+        self.feat_dim = self.cfg.vit_embed_dim * 198# * len(self.cfg.model_modalities)
 
-        self.vanilla_fusion_transformers = nn.TransformerEncoderLayer(d_model=hidden_size,
-                                    nhead=self.cfg.model_num_heads).to(self.fabric.device)
-
+        self.modality_transformer = self.fabric.to_device(
+            nn.TransformerEncoderLayer(d_model=hidden_size,
+                                        nhead=self.cfg.model_num_heads))
+    
         print("Loading pretrained transformer...")
 
         if self.cfg.pretrained_model == "distilled-384": 
@@ -80,6 +81,7 @@ class DEIT_Vanilla_Fusion(nn.Module):
 
     def forward(self, inputs: Dict[str, torch.Tensor],
                 train_mode: bool = True) -> Union[torch.Tensor, Dict[str, torch.Tensor]]:
+        output_embeddings = {}
 
         input_anchors = {}
         if train_mode:
@@ -93,53 +95,58 @@ class DEIT_Vanilla_Fusion(nn.Module):
             for modality in self.cfg.model_modalities:
                 input_anchors[modality] = inputs[modality]
 
-        z_anchor = []
+        z_anchors = []
         for modality in self.cfg.model_modalities:
-            # print("98 raw input shape, b, s, d", input_anchors[modality].shape)
-            z_anchor.append(self.transformer(input_anchors[modality]).last_hidden_state.permute(1, 0, 2)) 
-            # print("100 after transformer s, b, d", z_anchor[-1].shape)
+            z_temp = self.transformer(input_anchors[modality]).last_hidden_state.permute(1, 0, 2)
+            z_anchors.append(z_temp)
 
-        z_anchor = torch.cat(z_anchor, dim=0)
-        # print("104 after concat s*3, b, d", z_anchor.shape)
+        z_anchors = torch.cat(z_anchors, dim=0)
+        fusion_anchor_output = self.modality_transformer(z_anchors).permute(1, 0, 2)
 
-        anchor_output = self.vanilla_fusion_transformers(z_anchor) # [s, b, d]
-        if self.cfg.avg_output_tokens:
-            anchor_output = torch.mean(anchor_output, dim=0)
-        else:
-            anchor_output = anchor_output[self.cfg.token_step_to_decode, :, :] # [b, d], flattens automatically
+        fusion_anchor_output_chunked = torch.chunk(fusion_anchor_output, chunks=len(self.cfg.model_modalities), dim=1)
+        fusion_anchor_output = torch.stack(fusion_anchor_output_chunked, dim=0)
+        fusion_anchor_output_mean = fusion_anchor_output.mean(dim=0) #.permute(1, 0, 2, 3) #.mean(dim=0)
+        # print("fusion_anchor_output_mean", fusion_anchor_output_mean.size())
 
-        output_embeddings = {}
-        output_embeddings["z_reparamed_anchor"] = anchor_output
+        fusion_anchor_output = fusion_anchor_output_mean.reshape(fusion_anchor_output_mean.size(0), -1)
+        # fusion_anchor_output = torch.mean(fusion_anchor_output)
+
+        output_embeddings["z_reparamed_anchor"] = fusion_anchor_output
 
         if train_mode:
-            z_pos = []
+
+            z_positives = []
             for modality in self.cfg.model_modalities:
-                z_pos.append(self.transformer(input_positives[modality]).last_hidden_state.permute(1, 0, 2))
-            
-            z_pos = torch.cat(z_pos, dim=0)
-            pos_output = self.vanilla_fusion_transformers(z_pos)
-            if self.cfg.avg_output_tokens:
-                pos_output = torch.mean(pos_output, dim=0)
-            else:
-                pos_output = pos_output[self.cfg.token_step_to_decode, :, :]
+                z_positives.append(self.transformer(input_positives[modality]).last_hidden_state.permute(1, 0, 2))
+            z_positives = torch.cat(z_positives, dim=0)
+            fusion_positives_output = self.modality_transformer(z_positives).permute(1, 0, 2)
+            fusion_positives_output_chunked = torch.chunk(fusion_positives_output, chunks=len(self.cfg.model_modalities), dim=1)
+            fusion_positives_output = torch.stack(fusion_positives_output_chunked, dim=0)
+            fusion_positives_output_mean = fusion_positives_output.mean(dim=0) #.permute(1, 0, 2, 3)#.mean(dim=0)
 
-            z_neg = []
+            fusion_positives_output = fusion_positives_output_mean.reshape(fusion_positives_output_mean.size(0), -1)
+            # fusion_anchor_output = torch.mean(fusion_anchor_output)
+
+            # fusion_positives_output = fusion_positives_output.reshape(fusion_positives_output.size(0), -1)
+
+            output_embeddings["z_reparamed_positive"] = fusion_positives_output
+
+            z_negatives = []
             for modality in self.cfg.model_modalities:
-                z_neg.append(self.transformer(input_negatives[modality]).last_hidden_state.permute(1, 0, 2))
-
-            z_neg = torch.cat(z_neg, dim=0)
-            neg_output = self.vanilla_fusion_transformers(z_neg)
-            if self.cfg.avg_output_tokens:
-                neg_output = torch.mean(neg_output, dim=0)
-            else:
-                neg_output = neg_output[self.cfg.token_step_to_decode, :, :]
-                
-
-            output_embeddings["z_reparamed_positive"] = pos_output
-            output_embeddings["z_reparamed_negative"] = neg_output
+                z_negatives.append(self.transformer(input_negatives[modality]).last_hidden_state.permute(1, 0, 2))
+            z_negatives = torch.cat(z_negatives, dim=0)
+            fusion_negatives_output = self.modality_transformer(z_negatives).permute(1, 0, 2)
             
-            anchor_output = self.bottleneck(anchor_output)
-            output_class = self.decoder(anchor_output)
+            fusion_negatives_output_chunked = torch.chunk(fusion_negatives_output, chunks=len(self.cfg.model_modalities), dim=1)
+            fusion_negatives_output = torch.stack(fusion_negatives_output_chunked, dim=0)
+            fusion_negatives_output_mean = fusion_negatives_output.mean(dim=0) #.permute(1, 0, 2, 3)#.mean(dim=0)
+
+            fusion_negatives_output = fusion_negatives_output_mean.reshape(fusion_negatives_output_mean.size(0), -1)
+
+            output_embeddings["z_reparamed_negative"] = fusion_negatives_output
+
+            fusion_anchor_output = self.bottleneck(fusion_anchor_output)
+            output_class = self.decoder(fusion_anchor_output)
 
             return output_class, output_embeddings
 

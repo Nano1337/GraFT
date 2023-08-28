@@ -1,9 +1,14 @@
 # General parameters
 use_optuna: True
-train_stage: 2  
+train_stage: 1
 output_dir: '/data/datasets/research-datasets/output_dir'
 seed: 906579864 
 phase: 'train'
+
+
+# Vanilla fusion experiment specific params
+token_step_to_decode: 100 # 0 to 197
+avg_output_tokens: True
 
 # Dataset parameters
 dataroot: '/data/datasets/research-datasets'
@@ -17,28 +22,24 @@ hflip: 0.5 # threshold for random horizontal flip
 resize_min: 0.8 # only if data_augmentation is True
 resize_max: 1.0 # only if data_augmentation is True
 
-augment_type: 'random_erasure' # Optional: "random_erasure"
-train_ratio: 0.8 # use 80% of the data for training and 20% for validation
+augment_type: 'random_erasure' # Optional: "random_erasure", else ""
+train_ratio: 0.8 # 80% for training and 20% for validation
 image_num_for_reid_validate: 25 # Default 25
 num_triplet_samples: 8 # Default 1
 
 # Model parameters 
-model_modalities: ['R', 'N', 'T']
-model_num_cls_tokens: 0
-model_num_fusion_tokens: 1
-model_num_heads: 8
-vit_embed_dim: 768 # 384 for dino, 768 normally
-model_decoder_output_class_num: 50 # change this when changing datasets
-model_fusion_combos: 'ffd'
-model_lrnable_fusion_avg: False
-data_token_step: 0
-pretrained_model: "distilled-224"
+model_modalities: ['R', 'N', 'T'] #need
+model_num_heads: 8 #need
+vit_embed_dim: 768 # 384 for dino, 768 normally # need
+model_decoder_output_class_num: 50 # need, change this when changing datasets
+
+pretrained_model: 'distilled-224' # need
 unfreeze_transformer_backbone: False
-lagging_modality_token: True
 one_hot: True
 
+
 # Loss parameters
-loss_fn: "center+ce+triplet_euclidean_soft_margin" 
+loss_fn: 'ce+triplet_euclidean_soft_margin'
 triplet_loss_weighting: 0.5 
 ce_loss_weighting: 0.5 
 center_loss_weighting: 0.0005
@@ -50,22 +51,22 @@ lr: 0.00002
 weight_decay: 0.001
 beta1: 0.83
 beta2: 0.97
-lr_scheduler_name: '' # Different from stage 1
+lr_scheduler_name: 'warmup_sqrt_lr'
 warmup_steps: 50
 max_lr: 0.01
 reset_scheduler: False
 
 # Training parameters
-gpus: [0, 1, 2, 3, 4, 5, 6, 7]
+gpus: [3, 5, 6, 7]
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
-ckpt_full_path: /data/datasets/research-datasets/ckpt_dir/20230814-103827-deit-rnt100-model-modality-tok/best.pth #/data/datasets/research-datasets/ckpt_dir/20230814-103827-deit-rnt100-model-modality-tok/best.pth # INSERT HERE
+ckpt_full_path: null 
 
-batch_size: 20
-num_epochs: 60
+batch_size: 26
+num_epochs: 40
 print_freq: 50
-model_name: "deit_gradual_fusion"
-trainer_name: "trainer_rgbn_triplet"
+model_name: 'deit_vanilla_fusion'
+trainer_name: 'trainer_rgbn_triplet'
 verbose: True # Setting for printing more information
 max_rank: 50 # Max number of ranks to calculate cmc and mAP
 n_trials: 1 # Number of trials for optuna
@@ -73,14 +74,14 @@ n_trials: 1 # Number of trials for optuna
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: 'mm-mafia-reid-new-mAP'
-study_name: 'deit-rnt100-clean-code-test'
-wandb_run_name: 'initial-test'
-wandb_trial_name: 'initial-test'
+study_name: 'deit-rnt100-vanilla-fusion'
+wandb_run_name: 'vanilla-fus-rnt100-token_step_to_decode=100-stage1'
+wandb_trial_name: 'vanilla-fus-rnt100-token_step_to_decode=100-avg-stage1'
 
 hyperparams:
   lr:
-    min: 0.000005
-    max: 0.000005
+    min: 0.00002
+    max: 0.00002
     type: loguniform
   weight_decay:
     min: 0.001
