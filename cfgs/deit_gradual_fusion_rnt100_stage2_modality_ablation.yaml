@@ -59,7 +59,7 @@ reset_scheduler: False
 gpus: [0, 1, 2, 3, 4, 5, 6, 7]
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
-ckpt_full_path: 
+ckpt_full_path: '/data/datasets/research-datasets/ckpt_dir/20230828-001337-modality-ablation/best.pth'
 
 # RN_trial_0: /data/datasets/research-datasets/ckpt_dir/20230828-001501-modality-ablation/best.pth
 # RNT_trial_0: /data/datasets/research-datasets/ckpt_dir/20230828-001337-modality-ablation/best.pth
@@ -82,8 +82,8 @@ n_trials: 1 # Number of trials for optuna
 use_wandb: True
 wandb_project: 'mm-mafia-reid-new-mAP'
 study_name: 'modality-ablation'
-wandb_run_name: 'stage2-R'
-wandb_trial_name: 'stage2-R'
+wandb_run_name: 'stage2-RNT'
+wandb_trial_name: 'stage2-RNT'
 
 hyperparams:
   lr:
