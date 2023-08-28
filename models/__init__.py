@@ -1,6 +1,7 @@
 import torch
 
 from models.DeiT_gradual_fusion import DEIT_Gradual_Fusion
+from models.DeiT_vanilla_fusion_old import DEIT_Vanilla_Fusion_old
 from models.DeiT_vanilla_fusion import DEIT_Vanilla_Fusion
 
 def get_model(cfgs: dict, fabric: any) -> torch.nn.Module:
@@ -20,6 +21,8 @@ def get_model(cfgs: dict, fabric: any) -> torch.nn.Module:
         model = DEIT_Gradual_Fusion(cfg=cfgs, fabric=fabric)
     elif cfgs.model_name == "deit_vanilla_fusion":
         model = DEIT_Vanilla_Fusion(cfg=cfgs, fabric=fabric)
+    elif cfgs.model_name == "deit_vanilla_fusion_old":
+        model = DEIT_Vanilla_Fusion_old(cfg=cfgs, fabric=fabric)
     else:
         raise NotImplementedError(f"{cfgs.model_name} not found")
 

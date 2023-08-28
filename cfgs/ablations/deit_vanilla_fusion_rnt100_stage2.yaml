@@ -2,8 +2,13 @@
 use_optuna: True
 train_stage: 1
 output_dir: '/data/datasets/research-datasets/output_dir'
-seed: 906579864
+seed: 906579864 
 phase: 'train'
+
+
+# Vanilla fusion experiment specific params
+token_step_to_decode: 0 # 0 to 197
+avg_output_tokens: True
 
 # Dataset parameters
 dataroot: '/data/datasets/research-datasets'
@@ -24,40 +29,35 @@ num_triplet_samples: 8 # Default 1
 
 # Model parameters 
 model_modalities: ['R', 'N', 'T'] #need
-model_num_cls_tokens: 0
-model_num_fusion_tokens: 1 #need, but not for optuna
 model_num_heads: 8 #need
 vit_embed_dim: 768 # 384 for dino, 768 normally # need
 model_decoder_output_class_num: 50 # need, change this when changing datasets
-model_fusion_combos: 'ffd' #need
-model_lrnable_fusion_avg: False
-data_token_step: 0 #need
+
 pretrained_model: 'distilled-224' # need
 unfreeze_transformer_backbone: False
-lagging_modality_token: True
 one_hot: True
 
 
 # Loss parameters
-loss_fn: 'ce+triplet_euclidean_soft_margin'
+loss_fn: 'center+ce+triplet_euclidean_soft_margin'
 triplet_loss_weighting: 0.5 
 ce_loss_weighting: 0.5 
 center_loss_weighting: 0.0005
-label_smoothing: 0.0
+label_smoothing: 0.1
 
 # Optimizer parameters
 optimizer: 'adamw'
-lr: 0000254
-weight_decay: 0.05
-beta1: 0.8390698330754732
-beta2: 0.978357126902522
+lr: 0.00002
+weight_decay: 0.001
+beta1: 0.83
+beta2: 0.97
 lr_scheduler_name: 'warmup_sqrt_lr'
-warmup_steps: 500
+warmup_steps: 50
 max_lr: 0.01
 reset_scheduler: False
 
 # Training parameters
-gpus: [0, 1, 2, 3]
+gpus: [0, 1, 2, 3, 4, 5, 6, 7]
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
 ckpt_full_path: null 
@@ -74,26 +74,26 @@ n_trials: 1 # Number of trials for optuna
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: 'mm-mafia-reid-new-mAP'
-study_name: 'deit-rnt100-clean-code-test'
-wandb_run_name: 'gradual-fusion-rnt100-stage1'
-wandb_trial_name: 'gradual-fusion-rnt100-stage1'
+study_name: 'deit-rnt100-vanilla-fusion'
+wandb_run_name: 'vanilla-fus-rnt100-token_step_to_decode=0-stage2'
+wandb_trial_name: 'vanilla-fus-rnt100-token_step_to_decode=0-avg-stage2'
 
 hyperparams:
   lr:
-    min: 0.0000254
-    max: 0.0000254
+    min: 0.000005
+    max: 0.000005
     type: loguniform
   weight_decay:
-    min: 0.05
-    max: 0.05
+    min: 0.001
+    max: 0.001
     type: loguniform
   beta1:
-    min: 0.8390698330754732
-    max: 0.8390698330754732
+    min: 0.80
+    max: 0.90
     type: float
   beta2:
-    min: 0.978357126902522
-    max: 0.978357126902522
+    min: 0.97
+    max: 0.98
     type: float
   model_num_cls_tokens: 
     min: 0
@@ -103,4 +103,3 @@ hyperparams:
     min: 1
     max: 1
     type: int
-
