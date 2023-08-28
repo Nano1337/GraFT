@@ -23,7 +23,7 @@ image_num_for_reid_validate: 25 # Default 25
 num_triplet_samples: 8 # Default 1
 
 # Model parameters 
-model_modalities: ['R', 'N', 'T'] #need
+model_modalities: ['R', 'N'] #need
 model_num_cls_tokens: 0
 model_num_fusion_tokens: 1 #need, but not for optuna
 model_num_heads: 8 #need
@@ -57,7 +57,7 @@ max_lr: 0.01
 reset_scheduler: False
 
 # Training parameters
-gpus: [0, 1, 2, 3]
+gpus: [0, 1, 2, 7]
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
 ckpt_full_path: null 
@@ -74,9 +74,9 @@ n_trials: 1 # Number of trials for optuna
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: 'mm-mafia-reid-new-mAP'
-study_name: 'deit-rnt100-clean-code-test'
-wandb_run_name: 'initial-test'
-wandb_trial_name: 'initial-test'
+study_name: 'modality-ablation'
+wandb_run_name: 'RN'
+wandb_trial_name: 'RN'
 
 hyperparams:
   lr:
@@ -103,4 +103,3 @@ hyperparams:
     min: 1
     max: 1
     type: int
-
