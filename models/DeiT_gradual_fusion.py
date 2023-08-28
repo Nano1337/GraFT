@@ -37,10 +37,8 @@ class DEIT_Gradual_Fusion(nn.Module):
         self.cfg = cfg
         self.fabric = fabric
         hidden_size = self.cfg.vit_embed_dim
-        self.feat_dim = self.cfg.vit_embed_dim * (
-            len(self.cfg.model_modalities) *
-            self.cfg.model_num_cls_tokens +
-            1) #self.cfg.model_num_fusion_tokens)
+        self.feat_dim = (self.cfg.vit_embed_dim * len(self.cfg.model_modalities) * 
+                         self.cfg.model_num_cls_tokens) + self.cfg.model_num_fusion_tokens * self.cfg.vit_embed_dim # data + fusion token
 
         self.cls_anchor: ParameterDict = nn.ParameterDict()
         self.modality_transformers: ModuleDict = nn.ModuleDict()
@@ -48,8 +46,8 @@ class DEIT_Gradual_Fusion(nn.Module):
         for modality in self.cfg.model_modalities:
             self.cls_anchor[modality] = nn.Parameter(
                     nn.init.xavier_uniform_(
-                        torch.empty(self.cfg.model_num_cls_tokens, 1,
-                                    hidden_size)).to(self.fabric.device))
+                        torch.empty(self.cfg.model_num_cls_tokens, 1, hidden_size)
+                                        ).to(self.fabric.device))
             self.modality_transformers[modality] = nn.TransformerEncoderLayer(d_model=hidden_size,
                                         nhead=self.cfg.model_num_heads).to(self.fabric.device)
 
@@ -60,8 +58,7 @@ class DEIT_Gradual_Fusion(nn.Module):
         
         self.fusion_avg_params = nn.Parameter(self.fabric.to_device(
                                                 torch.full((len(self.cfg.model_modalities),), 1/len(self.cfg.model_modalities)) 
-                                                ), requires_grad=(self.cfg.train_stage != 1) )
-        
+                                                ), requires_grad=(self.cfg.model_lrnable_fusion_avg) )
 
         print("Loading pretrained transformer...")
 
@@ -134,54 +131,43 @@ class DEIT_Gradual_Fusion(nn.Module):
             if self.cfg.model_fusion_combos[0] == "f":
                 z_anchors[modality] = torch.cat(
                     (cls_anchor[modality],
-                     self.fusion_tokens.repeat(1, z_anchors[modality].shape[1], 1), z_anchors[modality]),
+                     self.fusion_tokens.repeat(1, z_anchors[modality].shape[1], 1), 
+                     z_anchors[modality]),
                     dim=0)
             elif self.cfg.model_fusion_combos[0] == "d":
                 z_anchors[modality] = torch.cat(
-                    (cls_anchor[modality], z_anchors[modality],
+                    (cls_anchor[modality], 
+                     z_anchors[modality],
                      self.fusion_tokens.repeat(1, z_anchors[modality].shape[1], 1)),
                     dim=0)
 
             # pass through individual modality transformers
-            z_anchors_joint[modality] = self.modality_transformers[modality](
-                z_anchors[modality])
+            z_anchors_joint[modality] = self.modality_transformers[modality](z_anchors[modality])
 
             # (S, B, D) -> (B, S, D)
-            z_anchors_joint[modality] = z_anchors_joint[modality].permute(
-                1, 0, 2)
+            z_anchors_joint[modality] = z_anchors_joint[modality].permute(1, 0, 2)
             cls_anchor[modality] = cls_anchor[modality].permute(1, 0, 2) # (batch, seq_len, dim)
 
             # extract fusion tokens
-            #fusion_anchor = z_anchors_joint[modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens + self.cfg.model_num_fusion_tokens, :]
-            fusion_anchor = z_anchors_joint[modality][:, self.cfg.model_num_cls_tokens, :]
+            fusion_anchor = z_anchors_joint[modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens + self.cfg.model_num_fusion_tokens, :]
+            
             if not self.cfg.lagging_modality_token:
-                print("plucking out modality tokens")
-                cls_anchor[modality] = z_anchors_joint[modality][:, :self.cfg.model_num_cls_tokens, :]
+                    cls_anchor[modality] = z_anchors_joint[modality][:, :self.cfg.model_num_cls_tokens, :]
 
             # flatten 
-            cls_anchor_flattened = cls_anchor[modality].reshape(
-                cls_anchor[modality].shape[0], -1)
-            fusion_anchor_flattened = fusion_anchor.reshape(
-                fusion_anchor.shape[0], -1)
+            cls_anchor_flattened = cls_anchor[modality].reshape(cls_anchor[modality].shape[0], -1)
+            fusion_anchor_flattened = fusion_anchor.reshape(fusion_anchor.shape[0], -1)
             anchor_output.append(cls_anchor_flattened)
             fusion_anchor_output.append(fusion_anchor_flattened)
 
         fusion_anchor_output = torch.stack(fusion_anchor_output) # (modality, batch, dim)
         fusion_anchor_output = (self.fusion_avg_params.unsqueeze(1).unsqueeze(2) * fusion_anchor_output).sum(0) # expand into in batch & dim, sum across modality
 
-        if self.cfg.model_anchor_only_reid:
-            anchor_reid = fusion_anchor_output
-            anchor_output.append(fusion_anchor_output)
-            anchor_output = torch.cat(anchor_output, dim=1)
-        else:
-            anchor_output.append(fusion_anchor_output)
-            anchor_output = torch.cat(anchor_output, dim=1)
+        anchor_output.append(fusion_anchor_output)
+        anchor_output = torch.cat(anchor_output, dim=1)
 
         output_embeddings = {}
-        if self.cfg.model_anchor_only_reid:
-            output_embeddings["z_reparamed_anchor"] = anchor_reid
-        else:
-            output_embeddings["z_reparamed_anchor"] = anchor_output
+        output_embeddings["z_reparamed_anchor"] = anchor_output
 
         if train_mode:
             z_pos = {}
@@ -208,49 +194,36 @@ class DEIT_Gradual_Fusion(nn.Module):
                         dim=0)
                 elif self.cfg.model_fusion_combos[1] == "d":
                     z_pos[modality] = torch.cat(
-                        (cls_pos[modality], z_pos[modality],
+                        (cls_pos[modality], 
+                         z_pos[modality],
                          self.fusion_tokens.repeat(1, z_pos[modality].shape[1], 1)),
                         dim=0)
 
                 # pass through individual modality transformers
-                z_pos_joint[modality] = self.modality_transformers[modality](
-                    z_pos[modality])
+                z_pos_joint[modality] = self.modality_transformers[modality](z_pos[modality])
 
                 # (S, B, D) -> (B, S, D)
-                z_pos_joint[modality] = z_pos_joint[modality].permute(
-                    1, 0, 2)
+                z_pos_joint[modality] = z_pos_joint[modality].permute(1, 0, 2)
                 cls_pos[modality] = cls_pos[modality].permute(1, 0, 2)
 
                 # extract fusion tokens
-                # fusion_pos = z_pos_joint[
-                #     modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
-                #               self.cfg.model_num_fusion_tokens, :]
                 fusion_pos = z_pos_joint[
-                    modality][:, self.cfg.model_num_cls_tokens, :]
+                    modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
+                              self.cfg.model_num_fusion_tokens, :]
                 if not self.cfg.lagging_modality_token:
                     cls_pos[modality] = z_pos_joint[modality][:, :self.cfg.model_num_cls_tokens, :]
 
                 # flatten
-                cls_pos_flattened = cls_pos[modality].reshape(
-                    cls_pos[modality].shape[0], -1)
-                fusion_pos_flattened = fusion_pos.reshape(
-                    fusion_pos.shape[0], -1)
+                cls_pos_flattened = cls_pos[modality].reshape(cls_pos[modality].shape[0], -1)
+                fusion_pos_flattened = fusion_pos.reshape(fusion_pos.shape[0], -1)
                 pos_output.append(cls_pos_flattened)
                 fusion_pos_output.append(fusion_pos_flattened)
             fusion_pos_output = torch.stack(fusion_pos_output)
             fusion_pos_output = (self.fusion_avg_params.unsqueeze(1).unsqueeze(2) * fusion_pos_output).sum(0)
 
-            if self.cfg.model_anchor_only_reid:
-                pos_reid = fusion_pos_output
-                pos_output.append(fusion_pos_output)
-                pos_output = torch.cat(pos_output, dim=1)
-            else:
-                pos_output.append(fusion_pos_output)
-                pos_output = torch.cat(pos_output, dim=1)
-
-
+            pos_output.append(fusion_pos_output)
+            pos_output = torch.cat(pos_output, dim=1)
                 
-
             z_neg = {}
             z_neg_joint = {}
             fusion_neg_output = []
@@ -273,11 +246,13 @@ class DEIT_Gradual_Fusion(nn.Module):
                 if self.cfg.model_fusion_combos[2] == "f":
                     z_neg[modality] = torch.cat(
                         (cls_neg[modality],
-                         self.fusion_tokens.repeat(1, z_neg[modality].shape[1], 1), z_neg[modality]),
+                         self.fusion_tokens.repeat(1, z_neg[modality].shape[1], 1), 
+                         z_neg[modality]),
                         dim=0)
                 elif self.cfg.model_fusion_combos[2] == "d":
                     z_neg[modality] = torch.cat(
-                        (cls_neg[modality], z_neg[modality],
+                        (cls_neg[modality], 
+                         z_neg[modality],
                          self.fusion_tokens.repeat(1, z_neg[modality].shape[1], 1)),
                         dim=0)
 
@@ -291,18 +266,8 @@ class DEIT_Gradual_Fusion(nn.Module):
                 cls_neg[modality] = cls_neg[modality].permute(1, 0, 2)
 
                 # extract fusion tokens
-                # if self.cfg.model_fusion_combos[2] == "f":
-                #     fusion_neg = z_neg_joint[
-                #         modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
-                #                   self.cfg.model_num_fusion_tokens, :]
-                # else:
-                #     fusion_neg = z_neg_joint[
-                #         modality][:, self.cfg.model_num_cls_tokens +
-                #                   self.cfg.data_token_step:self.cfg.model_num_cls_tokens +
-                #                   self.cfg.model_num_fusion_tokens +
-                #                   self.cfg.data_token_step, :]
-
-                fusion_neg = z_neg_joint[modality][:, self.cfg.model_num_cls_tokens, :] # new
+                fusion_neg = z_neg_joint[modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
+                                   self.cfg.model_num_fusion_tokens, :] # new
                 
                 if not self.cfg.lagging_modality_token:
                     cls_neg[modality] = z_neg_joint[modality][:, :self.cfg.model_num_cls_tokens, :]
@@ -314,35 +279,15 @@ class DEIT_Gradual_Fusion(nn.Module):
                     cls_neg[modality].shape[0], -1)
                 neg_output.append(cls_neg_flattened)
                 fusion_neg_output.append(fusion_neg_flattened)
-            # fusion_neg_output = torch.mean(torch.stack(fusion_neg_output),
-            #                                dim=0)
+
             fusion_neg_output = torch.stack(fusion_neg_output)
             fusion_neg_output = (self.fusion_avg_params.unsqueeze(1).unsqueeze(2) * fusion_neg_output).sum(0)
 
-            if self.cfg.model_anchor_only_reid:
-                neg_reid = fusion_neg_output
-                neg_output.append(fusion_neg_output)
-                neg_output = torch.cat(neg_output, dim=1)
-            else:
-                neg_output.append(fusion_neg_output)
-                neg_output = torch.cat(neg_output, dim=1)
+            neg_output.append(fusion_neg_output)
+            neg_output = torch.cat(neg_output, dim=1)
 
-            if self.cfg.model_anchor_only_reid:
-                output_embeddings["z_reparamed_positive"] = pos_reid
-                output_embeddings["z_reparamed_negative"] = neg_reid
-            else:
-                output_embeddings["z_reparamed_positive"] = pos_output
-                output_embeddings["z_reparamed_negative"] = neg_output
-
-            # self.fusion_avg_params.retain_grad()
-            # if '1' in str(self.fusion_avg_params.device):
-            #     print("self.fusion_avg_params", self.fusion_avg_params, self.fusion_avg_params.requires_grad, self.fusion_avg_params.grad)
-
-            # if '4' in str(self.fusion_tokens.device):
-            #     print("self.fusion_tokens", self.fusion_tokens[0][0][:7], "grad", self.fusion_tokens[0][0][:7].grad) # [1, ,1, 768]
-            #     print("self.cls_anchor", self.cls_anchor['R'][0][0][:7], "grad", self.fusion_tokens[0][0][:7].grad) # [1, ,1, 768]
-            # print("self.fusion_tokens", self.fusion_tokens[:5])
-            # [ 0.0331,  0.0106,  0.0539,  0.0456,  0.0274,  0.0102, -0.0472],
+            output_embeddings["z_reparamed_positive"] = pos_output
+            output_embeddings["z_reparamed_negative"] = neg_output
             
             anchor_output = self.bottleneck(anchor_output)
             output_class = self.decoder(anchor_output)

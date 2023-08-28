@@ -1,17 +1,7 @@
-from typing import Optional, Any
-
 import torch
-import torch.distributed as dist
 
 from models.DeiT_gradual_fusion import DEIT_Gradual_Fusion
-from models.DeiT_gradual_fusion_scalable import DEIT_Gradual_Fusion_Scalable
-from models.DINO_gradual_fusion import DINO_Gradual_Fusion
-
 from models.DeiT_vanilla_fusion import DEIT_Vanilla_Fusion
-from models.DeiT_gradual_fusion_v2 import DEIT_Gradual_Fusion_V2
-from models.DeiT_gradual_fusion_v3 import DEIT_Gradual_Fusion_V3
-from models.DeiT_gradual_fusion_v4 import DEIT_Gradual_Fusion_V4
-from models.DeiT_gradual_fusion_v5 import DEIT_Gradual_Fusion_V5
 
 def get_model(cfgs: dict, fabric: any) -> torch.nn.Module:
     """Gets the specified model based on the provided configurations.
@@ -28,24 +18,9 @@ def get_model(cfgs: dict, fabric: any) -> torch.nn.Module:
     """
     if cfgs.model_name == "deit_gradual_fusion":
         model = DEIT_Gradual_Fusion(cfg=cfgs, fabric=fabric)
-    elif cfgs.model_name == "dino_gradual_fusion":
-        model = DINO_Gradual_Fusion(cfg=cfgs, fabric=fabric)
-    elif cfgs.model_name == "deit_gradual_fusion_scalable":
-        model = DEIT_Gradual_Fusion_Scalable(cfg=cfgs, fabric=fabric)
     elif cfgs.model_name == "deit_vanilla_fusion":
         model = DEIT_Vanilla_Fusion(cfg=cfgs, fabric=fabric)
-    elif cfgs.model_name == "deit_gradual_fusion_v2":
-        model = DEIT_Gradual_Fusion_V2(cfg=cfgs, fabric=fabric)
-    elif cfgs.model_name == "deit_gradual_fusion_v3":
-        model = DEIT_Gradual_Fusion_V3(cfg=cfgs, fabric=fabric)
-    elif cfgs.model_name == "deit_gradual_fusion_v4":
-        model = DEIT_Gradual_Fusion_V4(cfg=cfgs, fabric=fabric)
-    elif cfgs.model_name == "deit_gradual_fusion_v5":
-        model = DEIT_Gradual_Fusion_V5(cfg=cfgs, fabric=fabric)
     else:
-        model = None
-
-    if model is None:
         raise NotImplementedError(f"{cfgs.model_name} not found")
 
     return model

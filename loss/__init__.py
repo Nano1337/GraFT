@@ -1,5 +1,5 @@
 import torch.nn as nn
-from loss.reid_loss import Triplet_CE_Loss, Circle_Loss, Combined_Loss, ContextualSimilarityLoss
+from loss.reid_loss import Triplet_CE_Loss, Combined_Loss
 
 
 def get_loss(cfgs: dict, fabric):
@@ -23,10 +23,6 @@ def get_loss(cfgs: dict, fabric):
     elif "triplet" in cfgs.loss_fn and "+" not in cfgs.loss_fn:
         print("Using triplet_CE loss function.")
         criterion = Triplet_CE_Loss(cfgs=cfgs, fabric=fabric)
-    elif "circle" in cfgs.loss_fn and "+" not in cfgs.loss_fn:
-        criterion = Circle_Loss(cfgs=cfgs, fabric=fabric)
-    elif "context" in cfgs.loss_fn and "+" not in cfgs.loss_fn:
-        criterion = ContextualSimilarityLoss(cfgs=cfgs, fabric=fabric)
     elif "+" in cfgs.loss_fn:
         print("Using combined loss function.")
         criterion = Combined_Loss(cfgs=cfgs, fabric=fabric)

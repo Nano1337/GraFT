@@ -1,2 +1,0 @@
-,number,value,datetime_start,datetime_complete,duration,params_beta1,params_beta2,params_lr,params_weight_decay,state
-0,0,0.8180247163806961,2023-07-30 20:26:43.787348,2023-07-30 22:00:57.877589,0 days 01:34:14.090241,0.8143862682124177,0.9760216343413922,1e-05,0.001,COMPLETE

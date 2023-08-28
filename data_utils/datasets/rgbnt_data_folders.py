@@ -275,6 +275,7 @@ class RGBNT_MultimodalDatasetFolder(VisionDataset):
             batch_target = self.transform(batch_unzipped[1])
         else:
             batch_target = list(batch_unzipped[1])
+            
             if self.cfgs.one_hot and self.mode == "train":
                 batch_target = torch.nn.functional.one_hot(
                     torch.tensor(batch_target),

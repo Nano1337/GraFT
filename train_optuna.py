@@ -103,7 +103,7 @@ def main(cfgs: dict, fabric: Fabric, trial: Trial = None) -> float:
     print("Number of batches for validation:", num_batches)
     print("Dataloader size total:", num_batches * cfgs.batch_size)
 
-    config_name = os.path.splitext(os.path.basename(cfgs.cfg_name))[0]
+    config_name = os.path.splitext(os.path.basename(cfgs.study_name))[0]
     unique_dir_name = time.strftime("%Y%m%d-%H%M%S-") + config_name
     output_dir = Path(cfgs.output_dir, unique_dir_name)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -112,7 +112,7 @@ def main(cfgs: dict, fabric: Fabric, trial: Trial = None) -> float:
 
     model = models.get_model(cfgs=cfgs, fabric=fabric)
 
-    if cfgs.unfreeze:
+    if cfgs.unfreeze_transformer_backbone:
         for param in model.transformer.parameters():
             param.requires_grad = True
         model.transformer.pooler.dense.bias.requires_grad = False

@@ -34,7 +34,7 @@ def main(cfgs: dict):
     # Get the model
     model = models.get_model(cfgs=cfgs, fabric=fabric)
 
-    if cfgs.unfreeze:
+    if cfgs.unfreeze_transformer_backbone:
         for param in model.transformer.parameters():
             param.requires_grad = True
         model.transformer.pooler.dense.bias.requires_grad = False

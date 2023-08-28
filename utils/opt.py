@@ -101,7 +101,7 @@ def get_cfgs():
                         type=int,
                         default=25,
                         help='How many images (VALIDATE) to sample from data')
-    parser.add_argument('--num_triplet_samples',
+    parser.add_argument('--num_triplfet_samples',
                         type=int,
                         default=1,
                         help='Number of triplet samples to use for training')
