@@ -56,10 +56,18 @@ max_lr: 0.01
 reset_scheduler: False
 
 # Training parameters
-gpus: [1, 2, 3, 4, 5, 6]
+gpus: [0, 1, 2, 3, 4, 5, 6, 7]
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
-ckpt_full_path: /data/datasets/research-datasets/ckpt_dir/20230814-103827-deit-rnt100-model-modality-tok/best.pth #/data/datasets/research-datasets/ckpt_dir/20230814-103827-deit-rnt100-model-modality-tok/best.pth # INSERT HERE
+ckpt_full_path: 
+
+# RN_trial_0: /data/datasets/research-datasets/ckpt_dir/20230828-001501-modality-ablation/best.pth
+# RNT_trial_0: /data/datasets/research-datasets/ckpt_dir/20230828-001337-modality-ablation/best.pth
+# NT_trial_0: /data/datasets/research-datasets/ckpt_dir/20230828-001046-modality-ablation/best.pth
+# RT_trial_0: /data/datasets/research-datasets/ckpt_dir/20230828-000813-modality-ablation/best.pth
+# T-only_trial_0: /data/datasets/research-datasets/ckpt_dir/20230828-000512-modality-ablation/best.pth
+# N-only_trial_0: /data/datasets/research-datasets/ckpt_dir/20230828-000440-modality-ablation/best.pth
+# R-only_trial_0: /data/datasets/research-datasets/ckpt_dir/20230828-000045-modality-ablation/best.pth
 
 batch_size: 26
 num_epochs: 60
@@ -73,9 +81,9 @@ n_trials: 1 # Number of trials for optuna
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: 'mm-mafia-reid-new-mAP'
-study_name: 'deit-rnt100-clean-code-test'
-wandb_run_name: 'initial-test'
-wandb_trial_name: 'initial-test'
+study_name: 'modality-ablation'
+wandb_run_name: 'stage2-R'
+wandb_trial_name: 'stage2-R'
 
 hyperparams:
   lr:
