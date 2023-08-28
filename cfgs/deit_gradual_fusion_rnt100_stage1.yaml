@@ -1,5 +1,6 @@
 # General parameters
 use_optuna: True
+train_stage: 1
 output_dir: '/data/datasets/research-datasets/output_dir'
 seed: 906579864 
 phase: 'train'
@@ -15,6 +16,7 @@ data_augmentation: False
 hflip: 0.5 # threshold for random horizontal flip
 resize_min: 0.8 # only if data_augmentation is True
 resize_max: 1.0 # only if data_augmentation is True
+
 augment_type: 'random_erasure' # Optional: "random_erasure", else ""
 train_ratio: 0.8 # 80% for training and 20% for validation
 image_num_for_reid_validate: 25 # Default 25
@@ -23,7 +25,7 @@ num_triplet_samples: 8 # Default 1
 # Model parameters 
 model_modalities: ['R', 'N', 'T'] #need
 model_num_cls_tokens: 0
-model_num_fusion_tokens: 2 #need, but not for optuna
+model_num_fusion_tokens: 1 #need, but not for optuna
 model_num_heads: 8 #need
 vit_embed_dim: 768 # 384 for dino, 768 normally # need
 model_decoder_output_class_num: 50 # need, change this when changing datasets
@@ -56,7 +58,6 @@ reset_scheduler: False
 
 # Training parameters
 gpus: [0,]
-train_stage: 1
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
 ckpt_full_path: null 
