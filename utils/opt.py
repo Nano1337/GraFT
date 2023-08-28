@@ -122,6 +122,12 @@ def get_cfgs():
         default=True,
         help='Whether to use generalizable inputs (True is do not use generalizable inputs)'
     )
+    parser.add_argument(
+        '--model_anchor_only_reid',
+        type=bool,
+        default=False,
+        help='Whether to use only the anchor for reid (True is only use anchor)'
+    )
 
     # Optimizer & LR_scheduler parameters
     parser.add_argument('--optimizer',

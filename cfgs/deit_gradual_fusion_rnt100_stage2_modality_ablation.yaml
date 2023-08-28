@@ -33,7 +33,7 @@ model_fusion_combos: 'ffd'
 model_lrnable_fusion_avg: False
 data_token_step: 0
 pretrained_model: "distilled-224"
-unfreeze_transformer_backbone: False
+unfreeze_transformer_backbone: True
 lagging_modality_token: True
 one_hot: True
 
