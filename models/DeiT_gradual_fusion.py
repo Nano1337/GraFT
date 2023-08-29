@@ -266,9 +266,12 @@ class DEIT_Gradual_Fusion(nn.Module):
                 cls_neg[modality] = cls_neg[modality].permute(1, 0, 2)
 
                 # extract fusion tokens
-                fusion_neg = z_neg_joint[modality][:, self.cfg.model_num_cls_tokens:self.cfg.model_num_cls_tokens +
-                                   self.cfg.model_num_fusion_tokens, :] # new
-                
+                fusion_neg = z_neg_joint[
+                    modality][:, self.cfg.model_num_cls_tokens +
+                                self.cfg.data_token_step:self.cfg.model_num_cls_tokens +
+                                self.cfg.model_num_fusion_tokens +
+                                self.cfg.data_token_step, :]     
+                           
                 if not self.cfg.lagging_modality_token:
                     cls_neg[modality] = z_neg_joint[modality][:, :self.cfg.model_num_cls_tokens, :]
                 
