@@ -31,7 +31,7 @@ vit_embed_dim: 768 # 384 for dino, 768 normally # need
 model_decoder_output_class_num: 50 # need, change this when changing datasets
 model_fusion_combos: 'ffd' #need
 model_lrnable_fusion_avg: False
-data_token_step: 5 #need
+data_token_step: 25 #need
 pretrained_model: 'distilled-224' # need
 unfreeze_transformer_backbone: False
 lagging_modality_token: True
@@ -57,7 +57,7 @@ max_lr: 0.01
 reset_scheduler: False
 
 # Training parameters
-gpus: [0, 1, 2, 3]
+gpus: [4, 5, 6, 7]
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
 ckpt_full_path: null 
@@ -74,9 +74,9 @@ n_trials: 1 # Number of trials for optuna
 # Weights and Biases Logging
 use_wandb: True
 wandb_project: 'mm-mafia-reid-new-mAP'
-study_name: 'rnt100-random-step-ablation'
-wandb_run_name: 'step=5'
-wandb_trial_name: 'step=5'
+study_name: 'rnt100-random-step-ablation-again'
+wandb_run_name: 'step=25'
+wandb_trial_name: 'step=25'
 
 hyperparams:
   lr:
