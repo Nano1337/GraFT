@@ -9,4 +9,4 @@ SEED=$(date +%N)
 export WANDB_API_KEY=b730655c05d6f0514256a0372293a335e8a5aa1a
 export WANDB_DIR=/home/ubuntu/haoli3/research-GraFT/wandb
 
-python train_optuna.py -c cfgs/ablations/deit_gradual_fusion_rnt100_stage2_random_step_ablation.yaml
+python train_optuna.py -c cfgs/ablations/deit_gradual_fusion_rnt100_stage2_fusion_combo_ablation.yaml
