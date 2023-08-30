@@ -102,7 +102,6 @@ torchmetrics==1.1.0
 torchvision==0.15.2
 tqdm==4.66.1
 traitlets==5.9.0
-transformers==4.33.0.dev0
 triton==2.0.0
 typing-extensions==4.7.1
 tzdata==2023.3
