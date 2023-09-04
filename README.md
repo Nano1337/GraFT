@@ -52,3 +52,36 @@ wandb_trial_name: "elarger patch size=64, lower seq_len=4, e-5-6lr, transformer_
     ```bash
     python webapp_ui/app.py
     ```
+
+
+
+
+# When cloning this repo for the first time (Remove later for production)
+
+- Clone from the correct branch
+    ```bash
+    git clone -b cleaned-final ssh://git@192.168.100.16:222/ModernIntelligence/research-GraFT.git
+    ```
+
+- Create python venv
+    ```bash
+    python -m venv <your-name>
+    ```
+
+- Activate venv
+    ```bash
+    source <your-name>/bin/activate
+    ```
+
+- Install requirements
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+- Install hugginface transformers from source to use DeiT
+    ```bash
+    pip install git+https://github.com/huggingface/transformers
+    ```
+
+ - Check train_optuna.sh to run with correct configs
+
