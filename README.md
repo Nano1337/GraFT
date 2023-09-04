@@ -1,24 +1,40 @@
-# research-multimodal-mafia
+# GraFT: Gradual Fusion Transformer for Multimodal Re-Identification
+
+[Haoli Yin](https://haoliyin.me), [Emily Li](https://emilyjiayaoli.me), [Eva Schiller](https://www.linkedin.com/in/eva-schiller/), [Luke McDermott](https://scholar.google.com/citations?user=l_z4cj0AAAAJ&hl=en), [Daniel Cummings](https://scholar.google.com.au/citations?user=Dud0vLwAAAAJ&hl=en)
 
 ## Setup 
 
-First, create your virtual environment (venv) called mmenv by running the following command:
-    
-```bash
-python3 -m venv mmenv
-```
 
-Then, activate your venv by running the following command:
+1. Clone from the correct branch
+    ```bash
+    git clone -b cleaned-final ssh://git@192.168.100.16:222/ModernIntelligence/research-GraFT.git
+    ```
 
-```bash
-source mmenv/bin/activate
-```
+2. Create python venv
+    ```bash
+    python -m venv <your-name>
+    ```
 
-Finally, install the required packages by running the following command:
+3. Activate venv
+    ```bash
+    source <your-name>/bin/activate
+    ```
 
-```bash
-pip install -r requirements.txt
-```
+4. Install requirements
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+5. Install hugginface transformers from source to use DeiT
+    ```bash
+    pip install git+https://github.com/huggingface/transformers
+    ```
+
+6. Check train_optuna.sh to run with correct configs/yaml file
+    ```bash
+    sh ./train_optuna.sh
+    ```
+
 
 ## Pre-Experiment Checklist
 
@@ -45,43 +61,10 @@ wandb_trial_name: "elarger patch size=64, lower seq_len=4, e-5-6lr, transformer_
 - Activate virtual environment
     
     ```bash
-    source mmenv/bin/activate
+    source <your-name>/bin/activate
     ```
     
-- Run job scheduler interface
+- Run job scheduler interface (optional)
     ```bash
     python webapp_ui/app.py
     ```
-
-
-
-
-# When cloning this repo for the first time (Remove later for production)
-
-- Clone from the correct branch
-    ```bash
-    git clone -b cleaned-final ssh://git@192.168.100.16:222/ModernIntelligence/research-GraFT.git
-    ```
-
-- Create python venv
-    ```bash
-    python -m venv <your-name>
-    ```
-
-- Activate venv
-    ```bash
-    source <your-name>/bin/activate
-    ```
-
-- Install requirements
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-- Install hugginface transformers from source to use DeiT
-    ```bash
-    pip install git+https://github.com/huggingface/transformers
-    ```
-
- - Check train_optuna.sh to run with correct configs
-
