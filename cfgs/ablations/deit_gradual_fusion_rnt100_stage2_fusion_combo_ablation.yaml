@@ -29,7 +29,7 @@ model_num_fusion_tokens: 1
 model_num_heads: 8
 vit_embed_dim: 768 # 384 for dino, 768 normally
 model_decoder_output_class_num: 50 # change this when changing datasets
-model_fusion_combos: 'fff'
+model_fusion_combos: 'fdf'
 model_lrnable_fusion_avg: False
 data_token_step: 0
 pretrained_model: "distilled-224"
@@ -59,7 +59,7 @@ reset_scheduler: False
 gpus: [0, 1, 2, 3, 4, 5, 6, 7]
 
 ckpt_dir: '/data/datasets/research-datasets/ckpt_dir'
-ckpt_full_path: '/data/datasets/research-datasets/ckpt_dir/20230829-105537-deit-rnt100-augmented-triplet/best.pth'
+ckpt_full_path: '/data/datasets/research-datasets/ckpt_dir/20230829-112804-deit-rnt100-augmented-triplet/best.pth'
 
 # dff: /data/datasets/research-datasets/ckpt_dir/20230829-115305-deit-rnt100-augmented-triplet/best.pth
 # ddf: /data/datasets/research-datasets/ckpt_dir/20230829-114354-deit-rnt100-augmented-triplet/best.pth
@@ -82,8 +82,8 @@ n_trials: 1 # Number of trials for optuna
 use_wandb: True
 wandb_project: 'mm-mafia-reid-new-mAP'
 study_name: 'rnt100-fusion_combo-ablation-stage2'
-wandb_run_name: 'stage2-fff' 
-wandb_trial_name: 'stage2-fff'
+wandb_run_name: 'stage2-fdf' 
+wandb_trial_name: 'stage2-fdf'
 
 
 hyperparams:
