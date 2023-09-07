@@ -1,7 +1,78 @@
 # GraFT: Gradual Fusion Transformer for Multimodal Re-Identification
 
-[Haoli Yin](https://haoliyin.me), [Emily Li](https://emilyjiayaoli.me), [Eva Schiller](https://www.linkedin.com/in/eva-schiller/), [Luke McDermott](https://scholar.google.com/citations?user=l_z4cj0AAAAJ&hl=en), [Daniel Cummings](https://scholar.google.com.au/citations?user=Dud0vLwAAAAJ&hl=en)
 
+['arXiv (coming soon)'](https://arxiv.org)
+
+Official PyTorch implementation and pre-trained models for GraFT: Gradual Fusion Transformer for Multimodal Re-Identification 
+
+We introduce the Gradual Fusion Transformer (**GraFT**), a cutting-edge model tailored for Multimodal Object Re-Identification (ReID). Traditional ReID models exhibit scalability constraints when handling multiple modalities due to their heavy reliance on late fusion, delaying the merging of insights from various modalities. GraFT tackles this by utilizing learnable fusion tokens which guide self-attention across encoders, adeptly capturing nuances of both modality-specific and object-centric features. Complementing its core design, GraFT is bolstered with an innovative training paradigm and an augmented triplet loss, refining the feature embedding space for ReID tasks. Our extensive ablation studies empiricaly validate our architectural design choices, proving GraFT's consistent outperformance against prevailing multimodal ReID benchmarks. 
+
+## Datasets and Results
+
+We used the [RGBNT100](https://drive.google.com/file/d/1ssrNqRNiOi2XHqt6JPsjptXWDJuFba9A/view?usp=sharing) and [RGBN300](https://drive.google.com/file/d/11QUGw_cwrEAa9chqxJc1WB3C4c0bgd4E/view?usp=sharing) datasets to benchmark against other algorithms. You may see our results in the following table: 
+
+
+<table>
+<thead>
+  <tr>
+    <th>Method</th>
+    <th>Classif. (@1)</th>
+    <th colspan="7">Semantic Segmentation (mIoU)</th>
+    <th>Depth (δ1)</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td></td>
+    <td align="center"> ImageNet-1K<br>(RGB)<br></td>
+    <td align="center">ADE20K<br>(RGB)<br></td>
+    <td align="center" colspan="3">Hypersim<br>(RGB / D / RGB + D)<br></td>
+    <td align="center"colspan="3">NYUv2<br>(RGB / D / RGB + D)<br></td>
+    <td align="center">NYUv2<br>(RGB)<br></td>
+  </tr>
+  <tr>
+    <td>Sup. (DeiT)</td>
+    <td align="center">81.8</td>
+    <td align="center">45.8</td>
+    <td align="center">33.9</td>
+    <td align="center">-</td>
+    <td align="center">-</td>
+    <td align="center">50.1</td>
+    <td align="center">-</td>
+    <td align="center">-</td>
+    <td align="center">80.7</td>
+  </tr>
+  <tr>
+    <td>MAE</td>
+    <td align="center"><b>83.3</b></td>
+    <td align="center"><b>46.2</b></td>
+    <td align="center">36.5</td>
+    <td align="center">-</td>
+    <td align="center">-<br></td>
+    <td align="center">50.8</td>
+    <td align="center">-</td>
+    <td align="center">-</td>
+    <td align="center">85.1</td>
+  </tr>
+  <tr>
+    <td><b>MultiMAE</b></td>
+    <td align="center"><b>83.3</b></td>
+    <td align="center"><b>46.2</b></td>
+    <td align="center"><b>37.0</b></td>
+    <td align="center"><b>38.5</b></td>
+    <td align="center"><b>47.6</b></td>
+    <td align="center"><b>52.0</b></td>
+    <td align="center"><b>41.4</b></td>
+    <td align="center"><b>56.0</b></td>
+    <td align="center"><b>86.4</b></td>
+  </tr>
+</tbody>
+</table>
+
+
+## Catalog
+
+- [] Release Pre-trained models 
 
 
 ## Setup 
