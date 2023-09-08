@@ -1,7 +1,7 @@
 # GraFT: Gradual Fusion Transformer for Multimodal Re-Identification
 
 
-['arXiv (coming soon)'](https://arxiv.org)
+arXiv (coming soon)
 
 Official PyTorch implementation and pre-trained models for GraFT: Gradual Fusion Transformer for Multimodal Re-Identification 
 
@@ -13,66 +13,99 @@ We used the [RGBNT100](https://drive.google.com/file/d/1ssrNqRNiOi2XHqt6JPsjptXW
 
 
 <table>
-<thead>
-  <tr>
-    <th>Method</th>
-    <th>Classif. (@1)</th>
-    <th colspan="7">Semantic Segmentation (mIoU)</th>
-    <th>Depth (δ1)</th>
-  </tr>
-</thead>
-<tbody>
-  <tr>
-    <td></td>
-    <td align="center"> ImageNet-1K<br>(RGB)<br></td>
-    <td align="center">ADE20K<br>(RGB)<br></td>
-    <td align="center" colspan="3">Hypersim<br>(RGB / D / RGB + D)<br></td>
-    <td align="center"colspan="3">NYUv2<br>(RGB / D / RGB + D)<br></td>
-    <td align="center">NYUv2<br>(RGB)<br></td>
-  </tr>
-  <tr>
-    <td>Sup. (DeiT)</td>
-    <td align="center">81.8</td>
-    <td align="center">45.8</td>
-    <td align="center">33.9</td>
-    <td align="center">-</td>
-    <td align="center">-</td>
-    <td align="center">50.1</td>
-    <td align="center">-</td>
-    <td align="center">-</td>
-    <td align="center">80.7</td>
-  </tr>
-  <tr>
-    <td>MAE</td>
-    <td align="center"><b>83.3</b></td>
-    <td align="center"><b>46.2</b></td>
-    <td align="center">36.5</td>
-    <td align="center">-</td>
-    <td align="center">-<br></td>
-    <td align="center">50.8</td>
-    <td align="center">-</td>
-    <td align="center">-</td>
-    <td align="center">85.1</td>
-  </tr>
-  <tr>
-    <td><b>MultiMAE</b></td>
-    <td align="center"><b>83.3</b></td>
-    <td align="center"><b>46.2</b></td>
-    <td align="center"><b>37.0</b></td>
-    <td align="center"><b>38.5</b></td>
-    <td align="center"><b>47.6</b></td>
-    <td align="center"><b>52.0</b></td>
-    <td align="center"><b>41.4</b></td>
-    <td align="center"><b>56.0</b></td>
-    <td align="center"><b>86.4</b></td>
-  </tr>
-</tbody>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th colspan="5">RGBNT100</th>
+      <th colspan="5">RGBN300</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td></td>
+      <td align="center">Params</td>
+      <td align="center">mAP</td>
+      <td align="center">R1</td>
+      <td align="center">R5</td>
+      <td align="center">R10</td>
+      <td align="center">Params</td>
+      <td align="center">mAP</td>
+      <td align="center">R1</td>
+      <td align="center">R5</td>
+      <td align="center">R10</td>
+    </tr>
+    <tr>
+      <td>HAMNet</td>
+      <td align="center">78M</td>
+      <td align="center">65.4</td>
+      <td align="center">85.5</td>
+      <td align="center">87.9</td>
+      <td align="center">88.8</td>
+      <td align="center">52M</td>
+      <td align="center">61.9</td>
+      <td align="center">84.0</td>
+      <td align="center">86.0</td>
+      <td align="center">87.0</td>
+    </tr>
+    <tr>
+      <td>DANet</td>
+      <td align="center">78M</td>
+      <td align="center">N/A</td>
+      <td align="center">N/A</td>
+      <td align="center">N/A</td>
+      <td align="center">N/A</td>
+      <td align="center">52M</td>
+      <td align="center">71.0</td>
+      <td align="center">89.9</td>
+      <td align="center">90.9</td>
+      <td align="center">91.5</td>
+    </tr>
+    <tr>
+      <td>GAFNet</td>
+      <td align="center">130M</td>
+      <td align="center">74.4</td>
+      <td align="center">93.4</td>
+      <td align="center">94.5</td>
+      <td align="center">95.0</td>
+      <td align="center">130M</td>
+      <td align="center">72.7</td>
+      <td align="center">91.9</td>
+      <td align="center">93.6</td>
+      <td align="center">94.2</td>
+    </tr>
+    <tr>
+      <td>Multi-Stream ViT</td>
+      <td align="center">274M</td>
+      <td align="center">74.6</td>
+      <td align="center">91.3</td>
+      <td align="center">92.8</td>
+      <td align="center">93.5</td>
+      <td align="center">187M</td>
+      <td align="center">73.7</td>
+      <td align="center">91.9</td>
+      <td align="center">94.1</td>
+      <td align="center">94.8</td>
+    </tr>
+    <tr>
+      <td><b>GraFT (Ours)</b></td>
+      <td align="center">101M</td>
+      <td align="center"><b>76.6</b></td>
+      <td align="center"><b>94.3</b></td>
+      <td align="center"><b>95.3</b></td>
+      <td align="center"><b>96.0</b></td>
+      <td align="center">97M</td>
+      <td align="center"><b>75.1</b></td>
+      <td align="center"><b>92.1</b></td>
+      <td align="center"><b>94.5</b></td>
+      <td align="center"><b>95.2</b></td>
+    </tr>
+  </tbody>
 </table>
 
 
 ## Catalog
 
-- [] Release Pre-trained models 
+- [ ] Release Pre-trained models 
 
 
 ## Setup 
