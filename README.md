@@ -16,8 +16,8 @@ We used the [RGBNT100](https://drive.google.com/file/d/1ssrNqRNiOi2XHqt6JPsjptXW
   <thead>
     <tr>
       <th>Method</th>
-      <th colspan="5">RGBNT100</th>
-      <th colspan="5">RGBN300</th>
+      <th colspan="5" style="text-align:center;">RGBNT100</th>
+      <th colspan="5" style="text-align:center;">RGBN300</th>
     </tr>
   </thead>
   <tbody>
