@@ -8,9 +8,9 @@ Official PyTorch implementation and pre-trained models for GraFT: Gradual Fusion
 We introduce the Gradual Fusion Transformer (**GraFT**), a cutting-edge model tailored for Multimodal Object Re-Identification (ReID). Traditional ReID models exhibit scalability constraints when handling multiple modalities due to their heavy reliance on late fusion, delaying the merging of insights from various modalities. GraFT tackles this by utilizing learnable fusion tokens which guide self-attention across encoders, adeptly capturing nuances of both modality-specific and object-centric features. Complementing its core design, GraFT is bolstered with an innovative training paradigm and an augmented triplet loss, refining the feature embedding space for ReID tasks. Our extensive ablation studies empiricaly validate our architectural design choices, proving GraFT's consistent outperformance against prevailing multimodal ReID benchmarks. 
 
 <!-- Resize and center the Pareto image -->
-<center>
+<div align="center">
     <img src="figs/pareto.png" width="500" alt="Pareto Image">
-</center>
+</div>
 
 
 ## Datasets and Results
@@ -18,9 +18,9 @@ We introduce the Gradual Fusion Transformer (**GraFT**), a cutting-edge model ta
 We used the [RGBNT100](https://drive.google.com/file/d/1ssrNqRNiOi2XHqt6JPsjptXWDJuFba9A/view?usp=sharing) and [RGBN300](https://drive.google.com/file/d/11QUGw_cwrEAa9chqxJc1WB3C4c0bgd4E/view?usp=sharing) datasets to benchmark against other algorithms. You may see our results in the following table: 
 
 <!-- Resize and center the Fig2 Final image -->
-<center>
+<div align="center">
     <img src="figs/fig2-final.png" width="500" alt="Fig2 Final Image">
-</center>
+</div>
 
 <table>
   <thead>
