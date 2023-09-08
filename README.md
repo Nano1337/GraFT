@@ -124,17 +124,17 @@ We used the [RGBNT100](https://drive.google.com/file/d/1ssrNqRNiOi2XHqt6JPsjptXW
 
 1. Clone from the correct branch
     ```bash
-    git clone -b cleaned-final ssh://git@192.168.100.16:222/ModernIntelligence/research-GraFT.git
+    git clone <see HTTPS or SSH option>
     ```
 
 2. Create python venv
     ```bash
-    python -m venv <your-name>
+    python -m venv venv
     ```
 
 3. Activate venv
     ```bash
-    source <your-name>/bin/activate
+    source venv/bin/activate
     ```
 
 4. Install requirements
@@ -156,6 +156,7 @@ We used the [RGBNT100](https://drive.google.com/file/d/1ssrNqRNiOi2XHqt6JPsjptXW
 ## Pre-Experiment Checklist
 
 - Check configs
+- Check paths: output_dir, dataroot, dataset, ckpt_dir
 
 ```yaml
 use_optuna: True
@@ -178,7 +179,7 @@ wandb_trial_name: "elarger patch size=64, lower seq_len=4, e-5-6lr, transformer_
 - Activate virtual environment
     
     ```bash
-    source <your-name>/bin/activate
+    source venv/bin/activate
     ```
     
 - Run job scheduler interface (optional)

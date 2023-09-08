@@ -4,10 +4,6 @@ __pycache__/
 
 # Ignore environment-specific files
 venv/
-emily/
-haoli/
-haolicleaned/
-mmenv/
 *.pyc
 .env
 error_logs/
